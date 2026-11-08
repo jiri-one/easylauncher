@@ -1,34 +1,36 @@
 # EasyLauncher
 
-Lehký launcher pro Android, určený primárně pro telefony s černobílým e-ink displejem. Černý text na bílém pozadí, velké dlaždice bez ikon a přechody bez animací.
+**English** | [Čeština](README.cs.md)
 
-## Stav projektu
+A lightweight Android launcher designed primarily for phones with monochrome e-ink displays. Black text on a white background, large tiles without icons, and transitions without animations.
 
-Verze **0.1.1 je první veřejné sestavení**. Aplikace je fyzicky testovaná na telefonu **Bigme HiBreak Pro BW s Androidem 14**, včetně zobrazení při systémové velikosti písma 180 %.
+## Project status
 
-Teď začíná každodenní používání. Podle zkušeností z provozu budou přicházet opravy chyb a úpravy ovládání; další funkce mohou přibývat později podle skutečných potřeb. EasyLauncher vždy zůstane lehký a jednoduchý.
+Version **0.1.1 is the first public build**. The app has been tested on a physical **Bigme HiBreak Pro BW running Android 14**, including a system font scale of 180%.
 
-## Ovládání
+Daily use is now beginning. Bug fixes and usability improvements will follow from that experience; additional features may be added later as real needs emerge. EasyLauncher will always remain lightweight and simple.
 
-- Klepnutí na hodiny otevře budík, na datum vybraný kalendář.
-- Oblíbené aplikace mají dva sloupce. Dlouhé podržení otevře přejmenování, odebrání a úpravu pořadí. Při přejmenování vloží Enter nový řádek; název uložíš tlačítkem Uložit.
-- Tažení nahoru otevře abecední seznam ostatních aplikací s hledáním bez ohledu na diakritiku. Tažením dolů na začátku seznamu nebo přes jeho záhlaví se vrátíš na oblíbené a zavřeš klávesnici. Dlouhým podržením aplikaci přidáš mezi oblíbené.
-- Tažení zprava doleva otevře fotoaparát, zleva doprava kontakty a dolů na ploše oznámení. Gesta fungují také přes dlaždice; při větším počtu oblíbených nebo delších víceřádkových názvech lze mřížkou posouvat.
-- Nastavení umožňuje změnit cílové aplikace, počet sloupců, velikost názvů a automatické otevření klávesnice. Systémové tlačítko Domů vrací na plochu a zavírá hledání i klávesnici.
+## Controls
 
-V nastavení lze EasyLauncher vybrat jako výchozí domovskou aplikaci. Pro gesto oznámení povol jeho službu ve zpřístupnění Androidu. Služba pouze otevírá systémovou lištu; nečte její obsah ani obsah ostatních oken.
+- Tap the clock to open alarms, or the date to open your selected calendar.
+- Favorite apps use two columns by default. Long press a tile to rename, remove, or reorder it. When renaming, Enter inserts a line break; use **Uložit** (Save) to save the name.
+- Swipe up to open an alphabetical list of the remaining apps, with search that ignores diacritics. Swipe down at the top of the list or across its header to return to favorites and close the keyboard. Long press an app to add it to favorites.
+- Swipe from right to left to open the camera, from left to right to open contacts, and down on the home screen to open notifications. Gestures also work over tiles; the favorites grid can scroll when there are more favorites or longer names spanning multiple lines.
+- Settings let you change target apps, the number of columns, label size, and whether the keyboard opens automatically. The system Home button returns to the home screen and closes search and the keyboard.
 
-## Možná varianta pro televizi a Linux
+You can select EasyLauncher as your default home app from its settings. To use the notification gesture, enable its service in Android's accessibility settings. The service only opens the notification shade; it does not read its contents or the contents of other windows.
 
-Jedním z nápadů do budoucna je rozšířit EasyLauncher o televizní rozhraní pro Android TV i Linux. Společné jádro by sloužilo telefonu s e-ink displejem i jednoduchému televiznímu spouštěči nainstalovaných aplikací, například Kodi, ScummVM nebo Steam Link.
+## Possible TV and Linux version
 
-Televizní rozhraní by mělo rozložení na šířku, dobře viditelné označení vybrané dlaždice a plné ovládání myší, klávesnicí i dálkovým ovladačem. Spouštění aplikací a integrace se systémem by měly vlastní implementaci pro Android a Linux. Cílem by byla také možnost používat linuxovou variantu jako náhradu Flex Launcheru.
+One idea for the future is to extend EasyLauncher with a TV interface for both Android TV and Linux. A shared core would serve both e-ink phones and a simple TV launcher for installed apps such as Kodi, ScummVM, or Steam Link.
 
-Podpora Linuxu a televizní rozhraní jsou zatím plán. Prioritou zůstává lehkost a jednoduchost, ověřovaná také spotřebou paměti a procesoru při skutečném používání.
+The TV interface would use a landscape layout, clearly highlight the selected tile, and fully support a mouse, keyboard, and remote control. App launching and system integration would have separate implementations for Android and Linux. Another goal would be to make the Linux version a possible replacement for Flex Launcher.
 
-## Sestavení
+Linux support and the TV interface are currently plans. Keeping the app lightweight and simple remains the priority, with memory and CPU usage also checked during everyday use.
 
-První sestavení používá Flutter 3.47.9 s Dartem 3.13.7, Android SDK a JDK podporovaný přibaleným Gradlem. Minimální podporovaná verze je Android 7.0 (API 24).
+## Building
+
+The first build uses Flutter 3.47.9 with Dart 3.13.7, the Android SDK, and a JDK compatible with the bundled Gradle version. The minimum supported Android version is Android 7.0 (API 24).
 
 ```sh
 flutter pub get
@@ -37,25 +39,25 @@ flutter test
 python3 tool/build_apk.py
 ```
 
-APK pro ARM64 je v `build/app/outputs/flutter-apk/app-release.apk`. Lokální sestavení používá vývojový podpis; pro vydání nastav vlastní podpis v Android projektu.
+The ARM64 APK is written to `build/app/outputs/flutter-apk/app-release.apk`. Local builds use a development signing key; configure your own signing key in the Android project for distribution.
 
-Volitelný osobní profil se vloží jen do prvního spuštění. Pozdější aktualizace zachovávají nastavení uložené v telefonu.
+An optional personal profile is applied only on first launch. Subsequent updates preserve the settings saved on the phone.
 
 ```sh
 python3 tool/build_apk.py --profile private/launcher-profile.json
 adb install -r build/app/outputs/flutter-apk/app-release.apk
 ```
 
-Profil je JSON se `schemaVersion: 1`, polem `favorites` a volitelnými `layout`, `actions`, `labels` a `autoKeyboard`. Každá aplikace má `packageName`, plný `activityName` a `label`. Akce mají typ `launchApp`; podporované klíče jsou `clockTap`, `dateTap`, `swipeRight` a `swipeLeft`. Prázdný profil začíná bez oblíbených aplikací.
+The profile is JSON with `schemaVersion: 1`, a `favorites` array, and optional `layout`, `actions`, `labels`, and `autoKeyboard` fields. Each app has a `packageName`, a fully qualified `activityName`, and a `label`. Actions use the `launchApp` type; supported keys are `clockTap`, `dateTap`, `swipeRight`, and `swipeLeft`. An empty profile starts with no favorites.
 
-Osobní profily patří do ignorované složky `private/`. Při osobním sestavení budou součástí APK; veřejnou verzi sestav bez parametru `--profile`.
+Keep personal profiles in the ignored `private/` directory. When used for a personal build, they become part of the APK; omit `--profile` when creating a public build.
 
-## Test na zařízení
+## Device testing
 
 ```sh
 flutter test integration_test/app_test.dart -d DEVICE_ID
 ```
 
-Integrační test ověřuje nativní seznam aplikací, uložené nastavení, bezpečné odmítnutí neexistující aplikace a hledání. Test používá samostatné vývojové sestavení s identifikátorem `one.jiri.easylauncher.debug`; nastavení běžně nainstalované aplikace zůstává oddělené. Zobrazení a kvalitu obnovování e-inku je potřeba posoudit na fyzickém displeji.
+The integration test checks native app discovery, saved settings, safe rejection of a nonexistent app, and search. It uses a separate development build with the application ID `one.jiri.easylauncher.debug`, keeping its settings separate from the normally installed app. Display quality and e-ink refresh behavior need to be assessed on the physical screen.
 
-Vydané APK nevyžaduje přístup k internetu, kontaktům, událostem kalendáře ani k fotoaparátu. Otevírá příslušné aplikace systémovými rozhraními Androidu.
+The release APK does not request access to the internet, contacts, calendar events, or the camera. It opens the corresponding apps through Android system interfaces.
