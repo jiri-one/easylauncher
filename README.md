@@ -18,9 +18,13 @@ Teď začíná každodenní používání. Podle zkušeností z provozu budou p�
 
 V nastavení lze EasyLauncher vybrat jako výchozí domovskou aplikaci. Pro gesto oznámení povol jeho službu ve zpřístupnění Androidu. Služba pouze otevírá systémovou lištu; nečte její obsah ani obsah ostatních oken.
 
-## Možná televizní varianta
+## Možná varianta pro televizi a Linux
 
-Jedním z nápadů do budoucna je rozhraní pro Android TV: jednoduchá plocha s velkými dlaždicemi pro spouštění nainstalovaných aplikací, například Kodi, ScummVM nebo Steam Link. Potřebovalo by rozložení na šířku, ovládání šipkami a potvrzovacím tlačítkem a dobře viditelné označení vybrané dlaždice. TV varianta je zatím návrh; i u ní by zůstala prioritou lehkost a jednoduchost.
+Jedním z nápadů do budoucna je rozšířit EasyLauncher o televizní rozhraní pro Android TV i Linux. Společné jádro by sloužilo telefonu s e-ink displejem i jednoduchému televiznímu spouštěči nainstalovaných aplikací, například Kodi, ScummVM nebo Steam Link.
+
+Televizní rozhraní by mělo rozložení na šířku, dobře viditelné označení vybrané dlaždice a plné ovládání myší, klávesnicí i dálkovým ovladačem. Spouštění aplikací a integrace se systémem by měly vlastní implementaci pro Android a Linux. Cílem by byla také možnost používat linuxovou variantu jako náhradu Flex Launcheru.
+
+Podpora Linuxu a televizní rozhraní jsou zatím plán. Prioritou zůstává lehkost a jednoduchost, ověřovaná také spotřebou paměti a procesoru při skutečném používání.
 
 ## Sestavení
 
