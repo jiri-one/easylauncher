@@ -198,8 +198,13 @@ String normalizeSearch(String text) {
       .trim();
 }
 
-int compareLabels(String a, String b) {
-  const alphabet = [
+class LabelSortKey implements Comparable<LabelSortKey> {
+  LabelSortKey(this.label) : _key = _buildKey(label);
+
+  final String label;
+  final List<int> _key;
+
+  static const _alphabet = [
     'a',
     'b',
     'c',
@@ -232,7 +237,7 @@ int compareLabels(String a, String b) {
     'z',
     'ž',
   ];
-  List<int> key(String label) {
+  static List<int> _buildKey(String label) {
     var text = label.replaceAll(RegExp(r'\s+'), ' ').trim().toLowerCase();
     for (final char in 'áäàâãåďéěëèêíïìîňóöòôõťúůüùûýÿ'.split('')) {
       text = text.replaceAll(char, normalizeSearch(char));
@@ -241,18 +246,22 @@ int compareLabels(String a, String b) {
     for (var i = 0; i < text.length; i++) {
       final token = text.startsWith('ch', i) ? 'ch' : text[i];
       if (token == 'ch') i++;
-      final index = alphabet.indexOf(token);
+      final index = _alphabet.indexOf(token);
       result.add(index < 0 ? text.codeUnitAt(i) - 1000 : index);
     }
     return result;
   }
 
-  final first = key(a);
-  final second = key(b);
-  for (var i = 0; i < first.length && i < second.length; i++) {
-    final difference = first[i].compareTo(second[i]);
-    if (difference != 0) return difference;
+  @override
+  int compareTo(LabelSortKey other) {
+    for (var i = 0; i < _key.length && i < other._key.length; i++) {
+      final difference = _key[i].compareTo(other._key[i]);
+      if (difference != 0) return difference;
+    }
+    final length = _key.length.compareTo(other._key.length);
+    return length != 0 ? length : label.compareTo(other.label);
   }
-  final length = first.length.compareTo(second.length);
-  return length != 0 ? length : a.compareTo(b);
 }
+
+int compareLabels(String a, String b) =>
+    LabelSortKey(a).compareTo(LabelSortKey(b));

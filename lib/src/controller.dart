@@ -21,6 +21,11 @@ class LauncherController extends ChangeNotifier {
   StreamSubscription<String>? _events;
   Timer? _refreshTimer;
   int _refreshVersion = 0;
+  LauncherSettings? _indexedSettings;
+  List<LaunchTarget>? _indexedApps;
+  List<_IndexedApp> _appIndex = [];
+  List<LaunchTarget> _allApps = [];
+  List<LaunchTarget> _otherApps = [];
 
   Future<void> initialize() async {
     await reloadSettings();
@@ -142,18 +147,50 @@ class LauncherController extends ChangeNotifier {
     String query = '',
     bool includeFavorites = false,
   }) {
-    final search = normalizeSearch(query.trim());
-    final result = apps.where((app) {
-      if (!includeFavorites && isFavorite(app)) return false;
-      return search.isEmpty ||
-          normalizeSearch(label(app)).contains(search) ||
-          normalizeSearch(app.label).contains(search);
-    }).toList();
-    result.sort((a, b) {
-      final order = compareLabels(label(a), label(b));
-      return order == 0 ? a.id.compareTo(b.id) : order;
+    _indexApps();
+    final search = normalizeSearch(query);
+    if (search.isEmpty) return includeFavorites ? _allApps : _otherApps;
+    return [
+      for (final entry in _appIndex)
+        if ((includeFavorites || !entry.favorite) &&
+            (entry.searchLabel.contains(search) ||
+                entry.originalLabel.contains(search)))
+          entry.app,
+    ];
+  }
+
+  void _indexApps() {
+    if (identical(settings, _indexedSettings) &&
+        identical(apps, _indexedApps)) {
+      return;
+    }
+    final favoriteLabels = <String, String>{};
+    for (final favorite in settings.favorites) {
+      final id = resolve(favorite)?.id ?? favorite.id;
+      favoriteLabels.putIfAbsent(
+        id,
+        () => settings.labels[favorite.id] ?? favorite.label,
+      );
+    }
+    final entries = [
+      for (final app in apps)
+        _IndexedApp(
+          app: app,
+          label: settings.labels[app.id] ?? favoriteLabels[app.id] ?? app.label,
+          favorite: favoriteLabels.containsKey(app.id),
+        ),
+    ];
+    entries.sort((a, b) {
+      final order = a.order.compareTo(b.order);
+      return order == 0 ? a.app.id.compareTo(b.app.id) : order;
     });
-    return result;
+    _appIndex = entries;
+    _allApps = List.unmodifiable(entries.map((entry) => entry.app));
+    _otherApps = List.unmodifiable(
+      entries.where((entry) => !entry.favorite).map((entry) => entry.app),
+    );
+    _indexedSettings = settings;
+    _indexedApps = apps;
   }
 
   Future<void> update(LauncherSettings updated) async {
@@ -250,7 +287,9 @@ class LauncherController extends ChangeNotifier {
   }
 
   void _notify() {
-    if (!_disposed) notifyListeners();
+    if (_disposed) return;
+    _indexApps();
+    notifyListeners();
   }
 
   @override
@@ -260,4 +299,20 @@ class LauncherController extends ChangeNotifier {
     _events?.cancel();
     super.dispose();
   }
+}
+
+class _IndexedApp {
+  _IndexedApp({
+    required this.app,
+    required String label,
+    required this.favorite,
+  }) : order = LabelSortKey(label),
+       searchLabel = normalizeSearch(label),
+       originalLabel = normalizeSearch(app.label);
+
+  final LaunchTarget app;
+  final LabelSortKey order;
+  final String searchLabel;
+  final String originalLabel;
+  final bool favorite;
 }

@@ -98,6 +98,43 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('upward drag opens apps before the finger is released', (
+    tester,
+  ) async {
+    final (_, platform) = await launch(tester);
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const ValueKey('favorite-test.favoritex7'))),
+    );
+    await gesture.moveBy(const Offset(0, -24));
+    await gesture.moveBy(const Offset(0, -60));
+    await tester.pump();
+    expect(find.byKey(const ValueKey('app-search')), findsOneWidget);
+    await gesture.moveBy(const Offset(0, 140));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('app-search')), findsOneWidget);
+    expect(tester.testTextInput.isVisible, isTrue);
+    expect(platform.calls, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a short slow upward drag keeps favorites open', (tester) async {
+    final (_, platform) = await launch(tester);
+    final gesture = await tester.startGesture(
+      tester.getCenter(find.byKey(const ValueKey('favorite-test.favoritex7'))),
+    );
+    await gesture.moveBy(const Offset(0, -24));
+    await tester.pump(const Duration(milliseconds: 200));
+    await gesture.moveBy(const Offset(0, -15));
+    await tester.pump(const Duration(milliseconds: 200));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('clock')), findsOneWidget);
+    expect(find.byKey(const ValueKey('app-search')), findsNothing);
+    expect(platform.calls, isEmpty);
+    expect(tester.takeException(), isNull);
+  });
+
   testWidgets('favorite tiles expose tap and long press to accessibility', (
     tester,
   ) async {
@@ -154,6 +191,23 @@ void main() {
     expect(find.byKey(const ValueKey('app-search')), findsNothing);
     expect(find.byKey(const ValueKey('clock')), findsOneWidget);
     expect(tester.testTextInput.isVisible, isFalse);
+  });
+
+  testWidgets('native resume event refreshes the application list', (
+    tester,
+  ) async {
+    final (_, platform) = await launch(tester, autoKeyboard: false);
+    await tester.tap(find.byKey(const ValueKey('open-apps')));
+    await tester.pumpAndSettle();
+    final installed = app('Časovač');
+    platform.apps = [...platform.apps, installed];
+    platform.eventController.add('resume');
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const ValueKey('app-search')), 'casovac');
+    await tester.pumpAndSettle();
+    expect(find.byKey(ValueKey('app-${installed.id}')), findsOneWidget);
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('automatic keyboard can be disabled', (tester) async {

@@ -105,6 +105,75 @@ void main() {
     expect(controller.visibleApps(query: 'časovač').single.id, timer.id);
   });
 
+  test('drawer order and search follow renames and favorite changes', () async {
+    await controller.initialize();
+    expect(controller.visibleApps().map((app) => app.id), [
+      calendar.id,
+      phone.id,
+    ]);
+    await controller.rename(phone, 'Časovač');
+    expect(controller.visibleApps().map((app) => app.id), [
+      calendar.id,
+      phone.id,
+    ]);
+    await controller.rename(phone, 'Budík');
+    expect(controller.visibleApps().map((app) => app.id), [
+      phone.id,
+      calendar.id,
+    ]);
+    expect(controller.visibleApps(query: 'casovac'), isEmpty);
+    expect(controller.visibleApps(query: 'budik').single.id, phone.id);
+    expect(controller.visibleApps(query: 'phone').single.id, phone.id);
+    await controller.addFavorite(phone);
+    expect(controller.visibleApps(query: 'budik'), isEmpty);
+    expect(
+      controller.visibleApps(query: 'budik', includeFavorites: true).single.id,
+      phone.id,
+    );
+    await controller.removeFavorite(phone);
+    expect(controller.visibleApps(query: 'budik').single.id, phone.id);
+  });
+
+  test('drawer reflects reloaded settings and installed app changes', () async {
+    await controller.initialize();
+    controller.visibleApps(includeFavorites: true);
+    platform.saved = LauncherSettings(
+      favorites: [phone],
+      labels: {calendar.id: 'Diář'},
+    ).encode();
+    await controller.reloadSettings();
+    expect(controller.visibleApps().map((app) => app.id), [
+      browser.id,
+      calendar.id,
+    ]);
+    expect(controller.visibleApps(query: 'diar').single.id, calendar.id);
+    final timer = app('Časovač');
+    platform.apps = [phone, timer];
+    await controller.refresh();
+    expect(controller.visibleApps().map((app) => app.id), [timer.id]);
+    expect(controller.visibleApps(query: 'diar'), isEmpty);
+    expect(controller.visibleApps(query: 'casovac').single.id, timer.id);
+    expect(
+      controller.visibleApps(includeFavorites: true).map((app) => app.id),
+      [timer.id, phone.id],
+    );
+  });
+
+  test('equally named apps keep deterministic component order', () async {
+    final second = app('Hodiny', package: 'test.second');
+    final first = app('Hodiny', package: 'test.first');
+    platform.apps = [second, first];
+    await controller.initialize();
+    expect(controller.visibleApps().map((app) => app.id), [
+      first.id,
+      second.id,
+    ]);
+    expect(controller.visibleApps(query: 'hodiny').map((app) => app.id), [
+      first.id,
+      second.id,
+    ]);
+  });
+
   test(
     'changed launcher alias resolves by unique package and stays excluded',
     () async {
@@ -183,6 +252,8 @@ void main() {
       platform.apps = [browser, phone, changed];
       await controller.refresh();
       expect(controller.label(changed), 'Plán');
+      expect(controller.visibleApps(query: 'plan').single.id, changed.id);
+      expect(controller.visibleApps(query: 'calendar').single.id, changed.id);
       expect(
         LauncherSettings.decode(platform.saved!).labels[changed.id],
         'Plán',

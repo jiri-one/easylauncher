@@ -33,6 +33,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   double _horizontal = 0;
   double _vertical = 0;
+  bool _appsOpened = false;
 
   @override
   Widget build(BuildContext context) {
@@ -53,9 +54,19 @@ class _HomeScreenState extends State<HomeScreen> {
           _horizontal > 0 ? LaunchAction.right : LaunchAction.left,
         );
       },
-      onVerticalDragStart: (_) => _vertical = 0,
-      onVerticalDragUpdate: (details) => _vertical += details.delta.dy,
+      onVerticalDragStart: (_) {
+        _vertical = 0;
+        _appsOpened = false;
+      },
+      onVerticalDragUpdate: (details) {
+        _vertical += details.delta.dy;
+        if (_vertical <= -48 && !_appsOpened) {
+          _appsOpened = true;
+          widget.onApps();
+        }
+      },
       onVerticalDragEnd: (details) {
+        if (_appsOpened) return;
         if (_vertical.abs() < 48 &&
             !(_vertical.abs() > 20 &&
                 (details.primaryVelocity ?? 0).abs() > 350)) {

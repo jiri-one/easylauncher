@@ -19,7 +19,7 @@ class Launcher extends StatefulWidget {
   State<Launcher> createState() => _LauncherState();
 }
 
-class _LauncherState extends State<Launcher> with WidgetsBindingObserver {
+class _LauncherState extends State<Launcher> {
   _Screen _screen = _Screen.home;
   StreamSubscription<String>? _events;
   DateTime? _lastLaunch;
@@ -27,22 +27,13 @@ class _LauncherState extends State<Launcher> with WidgetsBindingObserver {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     _events = widget.controller.platform.events.listen((event) {
       if (event == 'home' && mounted) _home();
     }, onError: (_) {});
   }
 
   @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && widget.controller.ready) {
-      widget.controller.refresh();
-    }
-  }
-
-  @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
     _events?.cancel();
     super.dispose();
   }
