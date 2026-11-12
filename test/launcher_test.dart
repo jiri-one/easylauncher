@@ -1,10 +1,13 @@
+import 'package:clock/clock.dart';
 import 'package:easylauncher/main.dart';
 import 'package:easylauncher/src/controller.dart';
 import 'package:easylauncher/src/models.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
+import 'package:intl/intl.dart';
 
 import 'support/fake_platform.dart';
 
@@ -178,6 +181,41 @@ void main() {
       app('Kalendář').packageName,
       'notifications',
     ]);
+  });
+
+  testWidgets('clock keeps time while a floating window covers home', (
+    tester,
+  ) async {
+    await launch(tester);
+    Future<void> lifecycle(AppLifecycleState state) =>
+        tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+          'flutter/lifecycle',
+          const StringCodec().encodeMessage(state.toString()),
+          (_) {},
+        );
+    addTearDown(() => lifecycle(AppLifecycleState.resumed));
+    final time = find.descendant(
+      of: find.byKey(const ValueKey('clock')),
+      matching: find.byType(Text),
+    );
+    String shown() => tester.widget<Text>(time).data!;
+    String current() => DateFormat('HH:mm').format(clock.now());
+    final start = clock.now();
+    // Mid-minute checks stay clear of the tick scheduled just after each minute.
+    await tester.pump(
+      Duration(milliseconds: 90000 - start.second * 1000 - start.millisecond),
+    );
+
+    await lifecycle(AppLifecycleState.inactive);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    await tester.pump(const Duration(minutes: 2));
+    expect(shown(), current());
+
+    await lifecycle(AppLifecycleState.paused);
+    await tester.pump(const Duration(minutes: 2));
+    await lifecycle(AppLifecycleState.inactive);
+    await tester.pump();
+    expect(shown(), current());
   });
 
   testWidgets('HOME event closes search and dismisses keyboard', (

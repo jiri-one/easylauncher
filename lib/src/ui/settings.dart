@@ -167,7 +167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               const Padding(
                 padding: EdgeInsets.all(20),
                 child: Text(
-                  'EasyLauncher 0.1.2',
+                  'EasyLauncher 0.1.3',
                   style: TextStyle(fontSize: 14),
                 ),
               ),

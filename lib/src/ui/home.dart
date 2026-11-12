@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:clock/clock.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -307,7 +308,7 @@ class ClockHeader extends StatefulWidget {
 }
 
 class _ClockHeaderState extends State<ClockHeader> with WidgetsBindingObserver {
-  DateTime _now = DateTime.now();
+  DateTime _now = clock.now();
   Timer? _timer;
 
   @override
@@ -319,12 +320,12 @@ class _ClockHeaderState extends State<ClockHeader> with WidgetsBindingObserver {
 
   void _schedule() {
     _timer?.cancel();
-    final now = DateTime.now();
+    final now = clock.now();
     _timer = Timer(
       Duration(milliseconds: 60010 - now.second * 1000 - now.millisecond),
       () {
         if (!mounted) return;
-        setState(() => _now = DateTime.now());
+        setState(() => _now = clock.now());
         _schedule();
       },
     );
@@ -332,13 +333,22 @@ class _ClockHeaderState extends State<ClockHeader> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      setState(() => _now = DateTime.now());
-      _schedule();
-    } else {
-      _timer?.cancel();
+    switch (state) {
+      // Home stays visible but inactive under a message popup or the notification shade.
+      case AppLifecycleState.resumed || AppLifecycleState.inactive:
+        final now = clock.now();
+        // An unchanged clock would only trigger another e-ink refresh.
+        if (_minute(now) != _minute(_now)) setState(() => _now = now);
+        _schedule();
+      case AppLifecycleState.hidden ||
+          AppLifecycleState.paused ||
+          AppLifecycleState.detached:
+        _timer?.cancel();
     }
   }
+
+  static int _minute(DateTime time) =>
+      time.millisecondsSinceEpoch ~/ Duration.millisecondsPerMinute;
 
   @override
   void dispose() {

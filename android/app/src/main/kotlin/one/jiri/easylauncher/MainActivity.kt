@@ -89,6 +89,12 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        // Flutter waits for onResume, so home shown again under a popup would otherwise stay paused.
+        flutterEngine?.lifecycleChannel?.appIsInactive()
+    }
+
     override fun onResume() {
         super.onResume()
         emit("resume")
