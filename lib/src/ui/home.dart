@@ -323,7 +323,6 @@ class _ClockHeaderState extends State<ClockHeader> with WidgetsBindingObserver {
     final now = clock.now();
     final time = DateFormat('HH:mm').format(now);
     final date = DateFormat('EEEE d. MMMM', 'cs_CZ').format(now);
-    // Redrawing an unchanged clock would only trigger another e-ink refresh.
     if (time != _time || date != _date) {
       setState(() {
         _time = time;

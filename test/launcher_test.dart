@@ -212,14 +212,21 @@ void main() {
     );
 
     await lifecycle(tester, AppLifecycleState.inactive);
-    expect(tester.binding.hasScheduledFrame, isFalse);
     await tester.pump(const Duration(minutes: 2));
     expect(shown(tester, 'clock'), current());
 
+    final hiddenAt = shown(tester, 'clock');
     await lifecycle(tester, AppLifecycleState.paused);
     await tester.pump(const Duration(minutes: 2));
+    // Paused home draws no frames, so force one to expose a tick that kept running.
+    tester.binding.scheduleForcedFrame();
+    await tester.pump();
+    expect(shown(tester, 'clock'), hiddenAt);
+
     await lifecycle(tester, AppLifecycleState.inactive);
     await tester.pump();
+    expect(shown(tester, 'clock'), current());
+    await tester.pump(const Duration(minutes: 1));
     expect(shown(tester, 'clock'), current());
   });
 
