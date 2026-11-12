@@ -308,25 +308,33 @@ class ClockHeader extends StatefulWidget {
 }
 
 class _ClockHeaderState extends State<ClockHeader> with WidgetsBindingObserver {
-  DateTime _now = clock.now();
+  String _time = '';
+  String _date = '';
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    _schedule();
+    _update();
   }
 
-  void _schedule() {
-    _timer?.cancel();
+  void _update() {
     final now = clock.now();
+    final time = DateFormat('HH:mm').format(now);
+    final date = DateFormat('EEEE d. MMMM', 'cs_CZ').format(now);
+    // Redrawing an unchanged clock would only trigger another e-ink refresh.
+    if (time != _time || date != _date) {
+      setState(() {
+        _time = time;
+        _date = date;
+      });
+    }
+    _timer?.cancel();
     _timer = Timer(
       Duration(milliseconds: 60010 - now.second * 1000 - now.millisecond),
       () {
-        if (!mounted) return;
-        setState(() => _now = clock.now());
-        _schedule();
+        if (mounted) _update();
       },
     );
   }
@@ -336,19 +344,13 @@ class _ClockHeaderState extends State<ClockHeader> with WidgetsBindingObserver {
     switch (state) {
       // Home stays visible but inactive under a message popup or the notification shade.
       case AppLifecycleState.resumed || AppLifecycleState.inactive:
-        final now = clock.now();
-        // An unchanged clock would only trigger another e-ink refresh.
-        if (_minute(now) != _minute(_now)) setState(() => _now = now);
-        _schedule();
+        _update();
       case AppLifecycleState.hidden ||
           AppLifecycleState.paused ||
           AppLifecycleState.detached:
         _timer?.cancel();
     }
   }
-
-  static int _minute(DateTime time) =>
-      time.millisecondsSinceEpoch ~/ Duration.millisecondsPerMinute;
 
   @override
   void dispose() {
@@ -363,7 +365,7 @@ class _ClockHeaderState extends State<ClockHeader> with WidgetsBindingObserver {
       mainAxisSize: MainAxisSize.min,
       children: [
         Semantics(
-          label: 'Budík, ${DateFormat('HH:mm').format(_now)}',
+          label: 'Budík, $_time',
           button: true,
           excludeSemantics: true,
           onTap: widget.onClock,
@@ -376,7 +378,7 @@ class _ClockHeaderState extends State<ClockHeader> with WidgetsBindingObserver {
               child: FittedBox(
                 fit: BoxFit.scaleDown,
                 child: Text(
-                  DateFormat('HH:mm').format(_now),
+                  _time,
                   style: const TextStyle(
                     fontSize: 52,
                     fontWeight: FontWeight.w600,
@@ -398,7 +400,7 @@ class _ClockHeaderState extends State<ClockHeader> with WidgetsBindingObserver {
             child: FittedBox(
               fit: BoxFit.scaleDown,
               child: Text(
-                DateFormat('EEEE d. MMMM', 'cs_CZ').format(_now),
+                _date,
                 maxLines: 1,
                 textAlign: TextAlign.center,
                 style: const TextStyle(

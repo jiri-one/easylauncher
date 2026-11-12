@@ -183,22 +183,27 @@ void main() {
     ]);
   });
 
+  Future<void> lifecycle(WidgetTester tester, AppLifecycleState state) =>
+      tester.binding.defaultBinaryMessenger.handlePlatformMessage(
+        'flutter/lifecycle',
+        const StringCodec().encodeMessage(state.toString()),
+        (_) {},
+      );
+
+  String shown(WidgetTester tester, String key) => tester
+      .widget<Text>(
+        find.descendant(
+          of: find.byKey(ValueKey(key)),
+          matching: find.byType(Text),
+        ),
+      )
+      .data!;
+
   testWidgets('clock keeps time while a floating window covers home', (
     tester,
   ) async {
     await launch(tester);
-    Future<void> lifecycle(AppLifecycleState state) =>
-        tester.binding.defaultBinaryMessenger.handlePlatformMessage(
-          'flutter/lifecycle',
-          const StringCodec().encodeMessage(state.toString()),
-          (_) {},
-        );
-    addTearDown(() => lifecycle(AppLifecycleState.resumed));
-    final time = find.descendant(
-      of: find.byKey(const ValueKey('clock')),
-      matching: find.byType(Text),
-    );
-    String shown() => tester.widget<Text>(time).data!;
+    addTearDown(() => lifecycle(tester, AppLifecycleState.resumed));
     String current() => DateFormat('HH:mm').format(clock.now());
     final start = clock.now();
     // Mid-minute checks stay clear of the tick scheduled just after each minute.
@@ -206,17 +211,40 @@ void main() {
       Duration(milliseconds: 90000 - start.second * 1000 - start.millisecond),
     );
 
-    await lifecycle(AppLifecycleState.inactive);
+    await lifecycle(tester, AppLifecycleState.inactive);
     expect(tester.binding.hasScheduledFrame, isFalse);
     await tester.pump(const Duration(minutes: 2));
-    expect(shown(), current());
+    expect(shown(tester, 'clock'), current());
 
-    await lifecycle(AppLifecycleState.paused);
+    await lifecycle(tester, AppLifecycleState.paused);
     await tester.pump(const Duration(minutes: 2));
-    await lifecycle(AppLifecycleState.inactive);
+    await lifecycle(tester, AppLifecycleState.inactive);
     await tester.pump();
-    expect(shown(), current());
+    expect(shown(tester, 'clock'), current());
   });
+
+  final instant = DateTime.utc(2026, 11, 11, 23, 15, 10);
+  testWidgets(
+    'returning home shows a time zone change within the same minute',
+    (tester) async {
+      var now = instant.toLocal();
+      await withClock(Clock(() => now), () async {
+        await launch(tester);
+        addTearDown(() => lifecycle(tester, AppLifecycleState.resumed));
+        await lifecycle(tester, AppLifecycleState.paused);
+        // The same instant in UTC stands in for a new local time zone.
+        now = instant.add(const Duration(seconds: 20));
+        await lifecycle(tester, AppLifecycleState.resumed);
+        await tester.pump();
+        expect(shown(tester, 'clock'), DateFormat('HH:mm').format(now));
+        expect(
+          shown(tester, 'date'),
+          DateFormat('EEEE d. MMMM', 'cs_CZ').format(now),
+        );
+      });
+    },
+    skip: instant.toLocal().timeZoneOffset == Duration.zero,
+  );
 
   testWidgets('HOME event closes search and dismisses keyboard', (
     tester,
