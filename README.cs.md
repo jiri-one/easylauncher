@@ -20,13 +20,31 @@ Teď začíná každodenní používání. Podle zkušeností z provozu budou p�
 
 V nastavení lze EasyLauncher vybrat jako výchozí domovskou aplikaci. Pro gesto oznámení povol jeho službu ve zpřístupnění Androidu. Služba pouze otevírá systémovou lištu; nečte její obsah ani obsah ostatních oken.
 
-## Možná varianta pro televizi a Linux
+## TV launcher pro Linux
 
-Jedním z nápadů do budoucna je rozšířit EasyLauncher o televizní rozhraní pro Android TV i Linux. Společné jádro by sloužilo telefonu s e-ink displejem i jednoduchému televiznímu spouštěči nainstalovaných aplikací, například Kodi, ScummVM nebo Steam Link.
+Linuxová verze se otevře na celé obrazovce s hodinami a mřížkou oblíbených aplikací. Dlaždici vybereš šipkami na klávesnici nebo ovladači a spustíš Enterem. Funguje i kliknutí myší.
 
-Televizní rozhraní by mělo rozložení na šířku, dobře viditelné označení vybrané dlaždice a plné ovládání myší, klávesnicí i dálkovým ovladačem. Spouštění aplikací a integrace se systémem by měly vlastní implementaci pro Android a Linux. Cílem by byla také možnost používat linuxovou variantu jako náhradu Flex Launcheru.
+```sh
+flutter build linux --release
+```
 
-Podpora Linuxu a televizní rozhraní jsou zatím plán. Prioritou zůstává lehkost a jednoduchost, ověřovaná také spotřebou paměti a procesoru při skutečném používání.
+Vytvoř soubor `easylauncher/apps.json` ve složce `$XDG_CONFIG_HOME` (obvykle `~/.config`). Pořadí v poli `favorites` určuje pořadí dlaždic. Po úpravě souboru EasyLauncher spusť znovu.
+
+```json
+{
+  "schemaVersion": 1,
+  "favorites": [
+    {"label": "Kodi", "command": "kodi"},
+    {"label": "ScummVM", "command": "scummvm"}
+  ]
+}
+```
+
+Pro spuštění s labwc vlož do `~/.config/labwc/autostart` následující řádek s absolutní cestou ke svému sestavení. Celou složku `bundle` ponech pohromadě.
+
+```sh
+/cesta/k/easylauncher/build/linux/x64/release/bundle/easylauncher &
+```
 
 ## Sestavení
 

@@ -20,13 +20,31 @@ Daily use is now beginning. Bug fixes and usability improvements will follow fro
 
 You can select EasyLauncher as your default home app from its settings. To use the notification gesture, enable its service in Android's accessibility settings. The service only opens the notification shade; it does not read its contents or the contents of other windows.
 
-## Possible TV and Linux version
+## Linux TV launcher
 
-One idea for the future is to extend EasyLauncher with a TV interface for both Android TV and Linux. A shared core would serve both e-ink phones and a simple TV launcher for installed apps such as Kodi, ScummVM, or Steam Link.
+The Linux version opens fullscreen with a clock and a grid of favorites. Use the arrow keys on a keyboard or remote to move focus, then press Enter to launch a tile. A mouse click also works.
 
-The TV interface would use a landscape layout, clearly highlight the selected tile, and fully support a mouse, keyboard, and remote control. App launching and system integration would have separate implementations for Android and Linux. Another goal would be to make the Linux version a possible replacement for Flex Launcher.
+```sh
+flutter build linux --release
+```
 
-Linux support and the TV interface are currently plans. Keeping the app lightweight and simple remains the priority, with memory and CPU usage also checked during everyday use.
+Create `easylauncher/apps.json` under `$XDG_CONFIG_HOME` (usually `~/.config`). The order in `favorites` is the tile order. Restart EasyLauncher after editing the file.
+
+```json
+{
+  "schemaVersion": 1,
+  "favorites": [
+    {"label": "Kodi", "command": "kodi"},
+    {"label": "ScummVM", "command": "scummvm"}
+  ]
+}
+```
+
+To start EasyLauncher with labwc, add this line to `~/.config/labwc/autostart`, using the absolute path to your build. Keep the entire `bundle` directory together.
+
+```sh
+/path/to/easylauncher/build/linux/x64/release/bundle/easylauncher &
+```
 
 ## Building
 
