@@ -26,10 +26,8 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   Future<void> _launch(BuildContext context, LaunchTarget app) async {
     final now = clock.now();
     final last = _launchedAt;
-    if (last != null) {
-      final elapsed = now.difference(last);
-      if (!elapsed.isNegative && elapsed < _launchPause) return;
-    }
+    // abs: a clock set back must not block launches until it catches up.
+    if (last != null && now.difference(last).abs() < _launchPause) return;
     _launchedAt = now;
     try {
       await controller.launch(app);
@@ -104,7 +102,6 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                                     child: Semantics(
                                       button: true,
                                       child: GestureDetector(
-                                        behavior: HitTestBehavior.opaque,
                                         onTap: () => _launch(context, app),
                                         child: Container(
                                           alignment: Alignment.center,
