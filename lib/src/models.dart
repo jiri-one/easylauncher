@@ -5,12 +5,32 @@ class LaunchTarget {
     required this.packageName,
     required this.activityName,
     required this.label,
+    this.command,
   });
 
-  factory LaunchTarget.fromJson(Map<String, dynamic> json) {
+  factory LaunchTarget.fromJson(
+    Map<String, dynamic> json, {
+    bool linux = false,
+  }) {
+    final label = json['label'];
+    if (linux) {
+      final command = json['command'];
+      if (command is! String ||
+          command.trim().isEmpty ||
+          command.contains('\u0000') ||
+          label is! String ||
+          label.trim().isEmpty) {
+        throw const FormatException('Neplatný záznam aplikace.');
+      }
+      return LaunchTarget(
+        packageName: 'linux:${Uri.encodeComponent(command)}',
+        activityName: '',
+        label: label.trim(),
+        command: command,
+      );
+    }
     final package = json['packageName'];
     final activity = json['activityName'];
-    final label = json['label'];
     if (package is! String ||
         !RegExp(r'^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+$')
             .hasMatch(package) ||
@@ -30,6 +50,7 @@ class LaunchTarget {
   final String packageName;
   final String activityName;
   final String label;
+  final String? command;
 
   String get id => '$packageName/$activityName';
 
@@ -37,11 +58,15 @@ class LaunchTarget {
     packageName: packageName,
     activityName: activityName,
     label: name,
+    command: command,
   );
 
   Map<String, dynamic> toJson() => {
-    'packageName': packageName,
-    'activityName': activityName,
+    if (command == null) ...{
+      'packageName': packageName,
+      'activityName': activityName,
+    } else
+      'command': command,
     'label': label,
   };
 }
@@ -83,7 +108,7 @@ class LauncherSettings {
        actions = Map.unmodifiable(actions),
        labels = Map.unmodifiable(labels);
 
-  factory LauncherSettings.decode(String source) {
+  factory LauncherSettings.decode(String source, {bool linux = false}) {
     final decoded = jsonDecode(source);
     if (decoded is! Map<String, dynamic> || decoded['schemaVersion'] != 1) {
       throw const FormatException('Nepodporovaný formát nastavení.');
@@ -116,7 +141,7 @@ class LauncherSettings {
       if (entry is! Map<String, dynamic>) {
         throw const FormatException('Neplatná oblíbená aplikace.');
       }
-      final app = LaunchTarget.fromJson(entry);
+      final app = LaunchTarget.fromJson(entry, linux: linux);
       if (ids.add(app.id)) apps.add(app);
     }
     final targets = <LaunchAction, LaunchTarget>{};
@@ -126,7 +151,7 @@ class LauncherSettings {
       if (entry is! Map<String, dynamic> || entry['type'] != 'launchApp') {
         throw const FormatException('Neplatná akce.');
       }
-      targets[action] = LaunchTarget.fromJson(entry);
+      targets[action] = LaunchTarget.fromJson(entry, linux: linux);
     }
     final names = <String, String>{for (final app in apps) app.id: app.label};
     for (final entry in labels.entries) {

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/services.dart';
 
 import 'models.dart';
@@ -87,4 +89,83 @@ class AndroidLauncherPlatform implements LauncherPlatform {
   @override
   Future<void> openAppDetails(String packageName) => _methods
       .invokeMethod<void>('openAppDetails', {'packageName': packageName});
+}
+
+class LinuxLauncherPlatform implements LauncherPlatform {
+  LinuxLauncherPlatform({
+    Directory? configDirectory,
+    this._startProcess = Process.start,
+  }) : _configDirectory = configDirectory ?? _defaultDirectory();
+
+  final Directory _configDirectory;
+  final Future<void> Function(
+    String,
+    List<String>, {
+    required ProcessStartMode mode,
+  })
+  _startProcess;
+
+  static Directory _defaultDirectory() {
+    final xdg = Platform.environment['XDG_CONFIG_HOME'];
+    final root = xdg != null && xdg.startsWith('/')
+        ? xdg
+        : '${Platform.environment['HOME']}/.config';
+    return Directory('$root/easylauncher');
+  }
+
+  File get _settings => File('${_configDirectory.path}/settings.json');
+
+  @override
+  Stream<String> get events => const Stream.empty();
+
+  @override
+  Future<List<LaunchTarget>> getApps() async => LauncherSettings.decode(
+    await File('${_configDirectory.path}/apps.json').readAsString(),
+    linux: true,
+  ).favorites;
+
+  @override
+  Future<String?> loadSettings() async =>
+      await _settings.exists() ? _settings.readAsString() : null;
+
+  @override
+  Future<void> saveSettings(String json) async {
+    await _configDirectory.create(recursive: true);
+    final temporary = await _configDirectory.createTemp('.settings-');
+    try {
+      final file = File('${temporary.path}/settings.json');
+      await file.writeAsString(json, flush: true);
+      await file.rename(_settings.path);
+    } finally {
+      await temporary.delete(recursive: true);
+    }
+  }
+
+  @override
+  Future<void> launchApp(LaunchTarget app) async {
+    final command = app.command;
+    if (command == null) throw ArgumentError('Missing shell command.');
+    await _startProcess('/bin/sh', [
+      '-c',
+      command,
+    ], mode: ProcessStartMode.detached);
+  }
+
+  @override
+  Future<void> openAction(LaunchAction action) async {}
+
+  @override
+  Future<bool> openNotifications() async => false;
+
+  @override
+  Future<LauncherStatus> getStatus() async => const LauncherStatus();
+
+  @override
+  Future<void> requestDefaultLauncher() async {}
+
+  @override
+  Future<void> openAccessibilitySettings() async {}
+
+  @override
+  Future<void> openAppDetails(String packageName) async {}
 }
