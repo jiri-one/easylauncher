@@ -30,6 +30,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final controller = widget.controller;
     final settings = controller.settings;
     final editable = controller.settingsAvailable;
+    final colors = Theme.of(context).colorScheme;
     return Column(
       children: [
         AppBar(
@@ -82,19 +83,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       style: ButtonStyle(
                         foregroundColor: WidgetStateProperty.resolveWith(
                           (states) => states.contains(WidgetState.selected)
-                              ? Colors.white
-                              : Colors.black,
+                              ? colors.surface
+                              : colors.onSurface,
                         ),
                         backgroundColor: WidgetStateProperty.resolveWith(
                           (states) => states.contains(WidgetState.selected)
-                              ? Colors.black
-                              : Colors.white,
+                              ? colors.onSurface
+                              : colors.surface,
                         ),
                         overlayColor: const WidgetStatePropertyAll(
                           Colors.transparent,
                         ),
-                        side: const WidgetStatePropertyAll(
-                          BorderSide(color: Colors.black),
+                        side: WidgetStatePropertyAll(
+                          BorderSide(color: colors.onSurface),
                         ),
                         animationDuration: Duration.zero,
                       ),
@@ -132,6 +133,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ],
                 ),
+              ),
+              SwitchListTile(
+                title: const Text('Tmavý režim'),
+                value: settings.darkMode,
+                onChanged: !editable
+                    ? null
+                    : (value) => controller.update(
+                        settings.copyWith(darkMode: value),
+                      ),
               ),
               SwitchListTile(
                 title: const Text('Automaticky otevřít klávesnici'),

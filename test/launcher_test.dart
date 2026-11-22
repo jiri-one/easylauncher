@@ -79,6 +79,87 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
+  testWidgets('dark mode applies across Android screens and system bars', (
+    tester,
+  ) async {
+    final messenger = tester.binding.defaultBinaryMessenger;
+    Map<Object?, Object?>? overlay;
+    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'SystemChrome.setSystemUIOverlayStyle') {
+        overlay = call.arguments as Map<Object?, Object?>;
+      }
+      return null;
+    });
+    addTearDown(
+      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
+    );
+    final (_, platform) = await launch(tester, autoKeyboard: false);
+    Color? color(Finder text) =>
+        tester.renderObject<RenderParagraph>(text).text.style?.color;
+    Color? background(Finder widget) => tester
+        .widget<Material>(
+          find.descendant(of: widget, matching: find.byType(Material)).first,
+        )
+        .color;
+
+    await tester.tap(find.byKey(const ValueKey('open-settings')));
+    await tester.pumpAndSettle();
+    final toggle = find.text('Tmavý režim');
+    await tester.scrollUntilVisible(toggle.hitTestable(), 200);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(LauncherSettings.decode(platform.saved!).darkMode, isTrue);
+    expect(background(find.byType(Scaffold)), Colors.black);
+    expect(background(find.byType(AppBar)), Colors.black);
+    expect(color(toggle), Colors.white);
+    expect(overlay?['statusBarColor'], Colors.black.toARGB32());
+    expect(overlay?['statusBarIconBrightness'], 'Brightness.light');
+    expect(overlay?['systemNavigationBarColor'], Colors.black.toARGB32());
+    expect(overlay?['systemNavigationBarIconBrightness'], 'Brightness.light');
+
+    await tester.tap(find.byTooltip('Zpět'));
+    await tester.pumpAndSettle();
+    final tile = find.byKey(const ValueKey('favorite-test.favoritex1'));
+    expect(background(find.byType(Scaffold)), Colors.black);
+    expect(
+      tester
+          .widget<Material>(
+            find.ancestor(of: tile, matching: find.byType(Material)).first,
+          )
+          .color,
+      Colors.black,
+    );
+    expect(
+      color(
+        find.descendant(
+          of: find.byKey(const ValueKey('clock')),
+          matching: find.byType(Text),
+        ),
+      ),
+      Colors.white,
+    );
+    expect(color(find.text('Favorite 1')), Colors.white);
+    await tester.longPress(tile);
+    await tester.pumpAndSettle();
+    expect(background(find.byType(BottomSheet)), Colors.black);
+    expect(color(find.text('Přejmenovat')), Colors.white);
+    await tester.tap(find.text('Přejmenovat'));
+    await tester.pumpAndSettle();
+    expect(background(find.byType(AlertDialog)), Colors.black);
+    expect(color(find.text('Název aplikace')), Colors.white);
+    await tester.tap(find.text('Zrušit'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const ValueKey('open-apps')));
+    await tester.pumpAndSettle();
+    expect(background(find.byType(Scaffold)), Colors.black);
+    expect(color(find.text('Kalendář')), Colors.white);
+    expect(
+      tester.widget<EditableText>(find.byType(EditableText)).style.color,
+      Colors.white,
+    );
+  });
+
   testWidgets('swipe up over a tile opens search and omits favorites', (
     tester,
   ) async {

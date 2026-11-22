@@ -40,6 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final favorites = controller.settings.favorites;
+    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       key: const ValueKey('home-gestures'),
       behavior: HitTestBehavior.opaque,
@@ -163,9 +164,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                   onTap: () => widget.onLaunch(app),
                                   onLongPress: () => widget.onMenu(app),
                                   child: Material(
-                                    color: Colors.white,
+                                    color: colors.surface,
                                     shape: RoundedRectangleBorder(
                                       side: BorderSide(
+                                        color: colors.onSurface,
                                         width: installed ? 1.5 : 1,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
@@ -241,7 +243,7 @@ class AdaptiveLabel extends StatelessWidget {
         fontSize: size,
         height: 1.04,
         fontWeight: FontWeight.w600,
-        color: Colors.black,
+        color: Theme.of(context).colorScheme.onSurface,
       );
 
   static double minimumHeight(

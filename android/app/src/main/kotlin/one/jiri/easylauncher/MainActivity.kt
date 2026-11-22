@@ -100,11 +100,6 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         emit("resume")
     }
 
-    override fun onPostResume() {
-        super.onPostResume()
-        configureSystemBars()
-    }
-
     // Flutter asks Android to finish when Back reaches its root route.
     override fun popSystemNavigator(): Boolean = true
 

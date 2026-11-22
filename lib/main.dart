@@ -11,14 +11,6 @@ import 'src/ui/tv_home.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('cs_CZ');
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.white,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Colors.white,
-      systemNavigationBarIconBrightness: Brightness.dark,
-    ),
-  );
   runApp(
     EasyLauncherApp(
       controller: LauncherController(
@@ -40,6 +32,9 @@ class EasyLauncherApp extends StatefulWidget {
 }
 
 class _EasyLauncherAppState extends State<EasyLauncherApp> {
+  static final _lightTheme = _theme(false);
+  static final _darkTheme = _theme(true);
+
   @override
   void initState() {
     super.initState();
@@ -53,32 +48,80 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
   }
 
   @override
-  Widget build(BuildContext context) => MaterialApp(
-    title: 'EasyLauncher',
-    debugShowCheckedModeBanner: false,
-    locale: const Locale('cs', 'CZ'),
-    supportedLocales: const [Locale('cs', 'CZ')],
-    localizationsDelegates: GlobalMaterialLocalizations.delegates,
-    theme: ThemeData(
+  Widget build(BuildContext context) {
+    final linux = defaultTargetPlatform == TargetPlatform.linux;
+    return ListenableBuilder(
+      listenable: widget.controller,
+      child: linux
+          ? TvHomeScreen(controller: widget.controller)
+          : Launcher(controller: widget.controller),
+      builder: (context, home) {
+        final theme = !linux && widget.controller.settings.darkMode
+            ? _darkTheme
+            : _lightTheme;
+        return MaterialApp(
+          title: 'EasyLauncher',
+          debugShowCheckedModeBanner: false,
+          locale: const Locale('cs', 'CZ'),
+          supportedLocales: const [Locale('cs', 'CZ')],
+          localizationsDelegates: GlobalMaterialLocalizations.delegates,
+          theme: theme,
+          themeAnimationDuration: Duration.zero,
+          builder: linux
+              ? null
+              : (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+                  value: theme.appBarTheme.systemOverlayStyle!,
+                  child: child!,
+                ),
+          home: home,
+        );
+      },
+    );
+  }
+
+  static ThemeData _theme(bool dark) {
+    final background = dark ? Colors.black : Colors.white;
+    final foreground = dark ? Colors.white : Colors.black;
+    final icons = dark ? Brightness.light : Brightness.dark;
+    return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
-      colorScheme: const ColorScheme.light(
-        primary: Colors.black,
-        onPrimary: Colors.white,
-        secondary: Colors.black,
-        surface: Colors.white,
-        onSurface: Colors.black,
-        outline: Colors.black,
-        surfaceTint: Colors.transparent,
-      ),
-      scaffoldBackgroundColor: Colors.white,
+      colorScheme: dark
+          ? const ColorScheme(
+              brightness: Brightness.dark,
+              primary: Colors.white,
+              onPrimary: Colors.black,
+              secondary: Colors.white,
+              onSecondary: Colors.black,
+              surface: Colors.black,
+              onSurface: Colors.white,
+              outline: Colors.white,
+              error: Colors.white,
+              onError: Colors.black,
+              surfaceTint: Colors.transparent,
+            )
+          : const ColorScheme.light(
+              primary: Colors.black,
+              onPrimary: Colors.white,
+              secondary: Colors.black,
+              surface: Colors.white,
+              onSurface: Colors.black,
+              outline: Colors.black,
+              surfaceTint: Colors.transparent,
+            ),
+      scaffoldBackgroundColor: background,
       splashFactory: NoSplash.splashFactory,
       highlightColor: Colors.transparent,
       hoverColor: Colors.transparent,
-      dividerColor: Colors.black,
-      appBarTheme: const AppBarTheme(
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black,
+      dividerColor: foreground,
+      appBarTheme: AppBarTheme(
+        backgroundColor: background,
+        foregroundColor: foreground,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: background,
+          statusBarIconBrightness: icons,
+          systemNavigationBarColor: background,
+          systemNavigationBarIconBrightness: icons,
+        ),
         elevation: 0,
         scrolledUnderElevation: 0,
       ),
@@ -90,13 +133,13 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
       listTileTheme: const ListTileThemeData(
         contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 6),
       ),
-      inputDecorationTheme: const InputDecorationTheme(
-        border: OutlineInputBorder(),
+      inputDecorationTheme: InputDecorationTheme(
+        border: const OutlineInputBorder(),
         enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.black),
+          borderSide: BorderSide(color: foreground),
         ),
         focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.black, width: 2),
+          borderSide: BorderSide(color: foreground, width: 2),
         ),
       ),
       pageTransitionsTheme: const PageTransitionsTheme(
@@ -105,11 +148,8 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
           TargetPlatform.iOS: _StillPageTransition(),
         },
       ),
-    ),
-    home: defaultTargetPlatform == TargetPlatform.linux
-        ? TvHomeScreen(controller: widget.controller)
-        : Launcher(controller: widget.controller),
-  );
+    );
+  }
 }
 
 class _StillPageTransition extends PageTransitionsBuilder {
