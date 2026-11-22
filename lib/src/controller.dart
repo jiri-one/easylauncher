@@ -26,6 +26,7 @@ class LauncherController extends ChangeNotifier {
   List<_IndexedApp> _appIndex = [];
   List<LaunchTarget> _allApps = [];
   List<LaunchTarget> _otherApps = [];
+  final _appIcons = <String, Future<Uint8List?>>{};
 
   Future<void> initialize() async {
     await reloadSettings();
@@ -274,6 +275,9 @@ class LauncherController extends ChangeNotifier {
 
   Future<void> launch(LaunchTarget target) =>
       platform.launchApp(resolve(target) ?? target);
+
+  Future<Uint8List?> appIcon(LaunchTarget app) =>
+      _appIcons.putIfAbsent(app.id, () => platform.getAppIcon(app));
 
   Future<void> perform(LaunchAction action) {
     final target = settings.actions[action];

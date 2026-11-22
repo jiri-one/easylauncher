@@ -10,6 +10,8 @@ import android.content.IntentFilter
 import android.content.pm.ActivityInfo
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.graphics.Bitmap
+import android.graphics.Canvas
 import android.graphics.Color
 import android.net.Uri
 import android.os.Build
@@ -24,6 +26,7 @@ import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
+import java.io.ByteArrayOutputStream
 import java.io.IOException
 import java.util.concurrent.Executors
 
@@ -54,7 +57,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         methodChannel = MethodChannel(messenger, "one.jiri.easylauncher/platform").also {
             it.setMethodCallHandler { call, result ->
-                if (call.method in setOf("getApps", "loadSettings", "saveSettings")) {
+                if (call.method in setOf("getApps", "getAppIcon", "loadSettings", "saveSettings")) {
                     worker.execute { handleMethodCall(call, result) }
                 } else {
                     handleMethodCall(call, result)
@@ -148,6 +151,14 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         try {
             when (call.method) {
                 "getApps" -> result.success(getApps())
+                "getAppIcon" -> result.success(
+                    getAppIcon(
+                        ComponentName(
+                            requiredString(call, "packageName"),
+                            requiredString(call, "activityName"),
+                        ),
+                    ),
+                )
                 "loadSettings" -> result.success(settings.getString("settings", null))
                 "openNotifications" -> result.success(NotificationAccessibilityService.openNotifications())
                 "getStatus" -> result.success(
@@ -227,6 +238,19 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                     "label" to it.loadLabel(packageManager).toString().ifBlank { it.packageName },
                 )
             }
+
+    private fun getAppIcon(component: ComponentName): ByteArray? {
+        val icon = try {
+            packageManager.getActivityIcon(component)
+        } catch (_: PackageManager.NameNotFoundException) {
+            return null
+        }
+        val bitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888)
+        icon.setBounds(0, 0, bitmap.width, bitmap.height)
+        icon.draw(Canvas(bitmap))
+        val png = ByteArrayOutputStream()
+        return if (bitmap.compress(Bitmap.CompressFormat.PNG, 100, png)) png.toByteArray() else null
+    }
 
     private fun launchApp(targetPackage: String, activityName: String?) {
         if (activityName != null) {

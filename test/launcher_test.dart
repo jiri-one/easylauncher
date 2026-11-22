@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:clock/clock.dart';
 import 'package:easylauncher/main.dart';
 import 'package:easylauncher/src/controller.dart';
@@ -180,6 +182,59 @@ void main() {
     expect(find.text('Kalendář'), findsOneWidget);
     expect(find.text('Nastavení'), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('app icons load only when enabled and are reused', (tester) async {
+    final (controller, platform) = await launch(tester, autoKeyboard: false);
+    final bytes = base64Decode(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
+    );
+    platform.icon = bytes;
+    final openApps = find.byKey(const ValueKey('open-apps'));
+    final favorite = find.byKey(const ValueKey('favorite-test.favoritex1'));
+    final app = controller.apps.firstWhere((app) => app.label == 'Kalendář');
+    final drawerEntry = find.byKey(ValueKey('app-${app.id}'));
+    expect(find.byType(Image), findsNothing);
+    await tester.tap(openApps);
+    await tester.pumpAndSettle();
+    expect(drawerEntry, findsOneWidget);
+    expect(find.byType(Image), findsNothing);
+    expect(platform.iconRequests, isEmpty);
+
+    await tester.runAsync(
+      () => precacheImage(MemoryImage(bytes), tester.element(drawerEntry)),
+    );
+    await tester.tap(find.byTooltip('Zpět'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('open-settings')));
+    await tester.pumpAndSettle();
+    final toggle = find.text('Ikony aplikací');
+    await tester.scrollUntilVisible(toggle.hitTestable(), 200);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(LauncherSettings.decode(platform.saved!).showAppIcons, isTrue);
+    await tester.tap(find.byTooltip('Zpět'));
+    await tester.pumpAndSettle();
+
+    void expectImage(Finder entry) {
+      final image = find.descendant(of: entry, matching: find.byType(RawImage));
+      expect(tester.widget<RawImage>(image).image, isNotNull);
+    }
+
+    expectImage(favorite);
+    await tester.tap(openApps);
+    await tester.pumpAndSettle();
+    expectImage(drawerEntry);
+    final requests = [...platform.iconRequests];
+    expect(
+      requests,
+      containsAll([controller.settings.favorites.first.id, app.id]),
+    );
+    await tester.tap(find.byTooltip('Zpět'));
+    await tester.pumpAndSettle();
+    await tester.tap(openApps);
+    await tester.pumpAndSettle();
+    expect(platform.iconRequests, requests);
   });
 
   testWidgets('upward drag opens apps before the finger is released', (

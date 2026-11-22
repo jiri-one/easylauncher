@@ -1,7 +1,28 @@
+import 'dart:typed_data';
+
 import 'package:material_ui/material_ui.dart';
 
 import '../controller.dart';
 import '../models.dart';
+
+const appIconSize = 32.0;
+
+Widget appIcon(LauncherController controller, LaunchTarget app) =>
+    FutureBuilder<Uint8List?>(
+      key: ValueKey(app.id),
+      future: controller.appIcon(app),
+      builder: (context, snapshot) {
+        final bytes = snapshot.data;
+        return bytes == null
+            ? const SizedBox.shrink()
+            : Image.memory(
+                bytes,
+                width: appIconSize,
+                height: appIconSize,
+                excludeFromSemantics: true,
+              );
+      },
+    );
 
 class AppsScreen extends StatefulWidget {
   const AppsScreen({
@@ -165,6 +186,9 @@ class _AppsScreenState extends State<AppsScreen> {
                         final app = apps[index];
                         return ListTile(
                           key: ValueKey('app-${app.id}'),
+                          leading: controller.settings.showAppIcons
+                              ? appIcon(controller, app)
+                              : null,
                           title: Text(
                             controller.label(app),
                             style: const TextStyle(

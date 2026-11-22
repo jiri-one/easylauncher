@@ -17,6 +17,7 @@ Daily use is now beginning. Bug fixes and usability improvements will follow fro
 - Swipe up to open an alphabetical list of the remaining apps, with search that ignores diacritics. Swipe down at the top of the list or across its header to return to favorites and close the keyboard. Long press an app to add it to favorites.
 - Swipe from right to left to open the camera, from left to right to open contacts, and down on the home screen to open notifications. Gestures also work over tiles; the favorites grid can scroll when there are more favorites or longer names spanning multiple lines.
 - Settings let you change target apps, the number of columns, label size, and whether the keyboard opens automatically. The system Home button returns to the home screen and closes search and the keyboard.
+- You can enable a pure black dark mode and show app icons on the home screen and in the app list.
 
 You can select EasyLauncher as your default home app from its settings. To use the notification gesture, enable its service in Android's accessibility settings. The service only opens the notification shade; it does not read its contents or the contents of other windows.
 

@@ -16,6 +16,7 @@ class LauncherStatus {
 abstract class LauncherPlatform {
   Stream<String> get events;
   Future<List<LaunchTarget>> getApps();
+  Future<Uint8List?> getAppIcon(LaunchTarget app);
   Future<String?> loadSettings();
   Future<void> saveSettings(String json);
   Future<void> launchApp(LaunchTarget app);
@@ -48,6 +49,10 @@ class AndroidLauncherPlatform implements LauncherPlatform {
         )
         .toList();
   }
+
+  @override
+  Future<Uint8List?> getAppIcon(LaunchTarget app) =>
+      _methods.invokeMethod<Uint8List>('getAppIcon', app.toJson());
 
   @override
   Future<String?> loadSettings() =>
@@ -112,6 +117,9 @@ class LinuxLauncherPlatform implements LauncherPlatform {
   Future<List<LaunchTarget>> getApps() async => LauncherSettings.decode(
     await File('${_configDirectory.path}/apps.json').readAsString(),
   ).favorites;
+
+  @override
+  Future<Uint8List?> getAppIcon(LaunchTarget app) async => null;
 
   // Nothing on the TV home changes settings yet.
   @override

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:easylauncher/src/models.dart';
 import 'package:easylauncher/src/platform.dart';
@@ -18,7 +19,9 @@ class FakePlatform implements LauncherPlatform {
   bool failSave = false;
   bool failLoad = false;
   bool notifications = true;
+  Uint8List? icon;
   final calls = <String>[];
+  final iconRequests = <String>[];
   final saves = <String>[];
   final eventController = StreamController<String>.broadcast(sync: true);
 
@@ -27,6 +30,12 @@ class FakePlatform implements LauncherPlatform {
 
   @override
   Future<List<LaunchTarget>> getApps() async => apps;
+
+  @override
+  Future<Uint8List?> getAppIcon(LaunchTarget app) async {
+    iconRequests.add(app.id);
+    return icon;
+  }
 
   @override
   Future<String?> loadSettings() async {

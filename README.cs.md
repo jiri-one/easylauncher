@@ -17,6 +17,7 @@ Teď začíná každodenní používání. Podle zkušeností z provozu budou p�
 - Tažení nahoru otevře abecední seznam ostatních aplikací s hledáním bez ohledu na diakritiku. Tažením dolů na začátku seznamu nebo přes jeho záhlaví se vrátíš na oblíbené a zavřeš klávesnici. Dlouhým podržením aplikaci přidáš mezi oblíbené.
 - Tažení zprava doleva otevře fotoaparát, zleva doprava kontakty a dolů na ploše oznámení. Gesta fungují také přes dlaždice; při větším počtu oblíbených nebo delších víceřádkových názvech lze mřížkou posouvat.
 - Nastavení umožňuje změnit cílové aplikace, počet sloupců, velikost názvů a automatické otevření klávesnice. Systémové tlačítko Domů vrací na plochu a zavírá hledání i klávesnici.
+- V nastavení lze zapnout tmavý režim s černým pozadím a ikony aplikací na ploše i v seznamu.
 
 V nastavení lze EasyLauncher vybrat jako výchozí domovskou aplikaci. Pro gesto oznámení povol jeho službu ve zpřístupnění Androidu. Služba pouze otevírá systémovou lištu; nečte její obsah ani obsah ostatních oken.
 

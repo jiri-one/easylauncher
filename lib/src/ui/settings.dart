@@ -144,6 +144,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
               ),
               SwitchListTile(
+                title: const Text('Ikony aplikací'),
+                value: settings.showAppIcons,
+                onChanged: !editable
+                    ? null
+                    : (value) => controller.update(
+                        settings.copyWith(showAppIcons: value),
+                      ),
+              ),
+              SwitchListTile(
                 title: const Text('Automaticky otevřít klávesnici'),
                 subtitle: const Text('Při otevření seznamu aplikací'),
                 value: settings.autoKeyboard,

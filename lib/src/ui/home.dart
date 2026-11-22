@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 
 import '../controller.dart';
 import '../models.dart';
+import 'apps.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -40,6 +41,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     final controller = widget.controller;
     final favorites = controller.settings.favorites;
+    final showAppIcons = controller.settings.showAppIcons;
     final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       key: const ValueKey('home-gestures'),
@@ -121,7 +123,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                   controller.label(app),
                                   textWidth,
                                 ) +
-                                16,
+                                16 +
+                                (showAppIcons ? appIconSize : 0),
                           ),
                         );
                         final height = math.max(
@@ -152,11 +155,14 @@ class _HomeScreenState extends State<HomeScreen> {
                               itemCount: favorites.length,
                               itemBuilder: (context, index) {
                                 final app = favorites[index];
-                                final installed =
-                                    controller.resolve(app) != null;
+                                final installed = controller.resolve(app);
                                 final label = controller.label(app);
+                                final text = AdaptiveLabel(
+                                  label: label,
+                                  fontSize: controller.settings.fontSize,
+                                );
                                 return Semantics(
-                                  label: installed
+                                  label: installed != null
                                       ? label
                                       : '$label, není nainstalovaná',
                                   button: true,
@@ -168,7 +174,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                     shape: RoundedRectangleBorder(
                                       side: BorderSide(
                                         color: colors.onSurface,
-                                        width: installed ? 1.5 : 1,
+                                        width: installed != null ? 1.5 : 1,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
                                     ),
@@ -184,11 +190,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                           horizontal: 10,
                                           vertical: 8,
                                         ),
-                                        child: AdaptiveLabel(
-                                          label: label,
-                                          fontSize:
-                                              controller.settings.fontSize,
-                                        ),
+                                        child: showAppIcons && installed != null
+                                            ? Column(
+                                                children: [
+                                                  appIcon(controller, installed),
+                                                  Expanded(child: text),
+                                                ],
+                                              )
+                                            : text,
                                       ),
                                     ),
                                   ),

@@ -98,6 +98,7 @@ class LauncherSettings {
     this.columns = 2,
     this.autoKeyboard = true,
     this.darkMode = false,
+    this.showAppIcons = false,
     this.fontSize = 28,
     Map<LaunchAction, LaunchTarget> actions = const {},
     Map<String, String> labels = const {},
@@ -123,11 +124,13 @@ class LauncherSettings {
     final columns = layout['favoriteColumns'] ?? 2;
     final keyboard = decoded['autoKeyboard'] ?? true;
     final darkMode = decoded['darkMode'] ?? false;
+    final showAppIcons = decoded['showAppIcons'] ?? false;
     final font = layout['fontSize'] ?? 28;
     if ((columns != 2 && columns != 3) ||
         columns is! int ||
         keyboard is! bool ||
         darkMode is! bool ||
+        showAppIcons is! bool ||
         font is! num ||
         !font.isFinite ||
         font < 18 ||
@@ -164,6 +167,7 @@ class LauncherSettings {
       columns: columns,
       autoKeyboard: keyboard,
       darkMode: darkMode,
+      showAppIcons: showAppIcons,
       fontSize: font.toDouble(),
       actions: targets,
       labels: names,
@@ -174,6 +178,7 @@ class LauncherSettings {
   final int columns;
   final bool autoKeyboard;
   final bool darkMode;
+  final bool showAppIcons;
   final double fontSize;
   final Map<LaunchAction, LaunchTarget> actions;
   final Map<String, String> labels;
@@ -183,6 +188,7 @@ class LauncherSettings {
     int? columns,
     bool? autoKeyboard,
     bool? darkMode,
+    bool? showAppIcons,
     double? fontSize,
     Map<LaunchAction, LaunchTarget>? actions,
     Map<String, String>? labels,
@@ -191,6 +197,7 @@ class LauncherSettings {
     columns: columns ?? this.columns,
     autoKeyboard: autoKeyboard ?? this.autoKeyboard,
     darkMode: darkMode ?? this.darkMode,
+    showAppIcons: showAppIcons ?? this.showAppIcons,
     fontSize: fontSize ?? this.fontSize,
     actions: actions ?? this.actions,
     labels: labels ?? this.labels,
@@ -205,6 +212,7 @@ class LauncherSettings {
     },
     'autoKeyboard': autoKeyboard,
     'darkMode': darkMode,
+    'showAppIcons': showAppIcons,
     'favorites': favorites.map((app) => app.toJson()).toList(),
     'labels': labels,
     'actions': {
