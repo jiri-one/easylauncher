@@ -22,7 +22,7 @@ class LaunchTarget {
         activityName: '',
         label: label.trim(),
         command: command,
-        icon: icon is String && icon.startsWith('/') ? icon : null,
+        icon: icon is String ? icon : null,
       );
     }
     final package = json['packageName'];

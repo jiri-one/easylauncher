@@ -38,13 +38,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
       ScaffoldMessenger.of(context)
         ..removeCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(
-            backgroundColor: Colors.black,
-            content: Text(
-              'Nepodařilo se spustit ${app.label}.',
-              style: const TextStyle(color: Colors.white),
-            ),
-          ),
+          SnackBar(content: Text('Nepodařilo se spustit ${app.label}.')),
           snackBarAnimationStyle: AnimationStyle.noAnimation,
         );
     }
