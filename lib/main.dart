@@ -90,6 +90,8 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
         surface: background,
         onSurface: foreground,
         outline: foreground,
+        error: foreground,
+        onError: background,
         surfaceTint: Colors.transparent,
       ),
       scaffoldBackgroundColor: background,
@@ -97,6 +99,25 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
       highlightColor: Colors.transparent,
       hoverColor: Colors.transparent,
       dividerColor: foreground,
+      // On black, dialogs and sheets would have no visible edge.
+      dialogTheme: dark
+          ? DialogThemeData(
+              shape: RoundedRectangleBorder(
+                side: BorderSide(color: foreground),
+                borderRadius: BorderRadius.circular(28),
+              ),
+            )
+          : null,
+      bottomSheetTheme: dark
+          ? BottomSheetThemeData(
+              shape: RoundedRectangleBorder(
+                side: BorderSide(color: foreground),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+            )
+          : null,
       appBarTheme: AppBarTheme(
         backgroundColor: background,
         foregroundColor: foreground,

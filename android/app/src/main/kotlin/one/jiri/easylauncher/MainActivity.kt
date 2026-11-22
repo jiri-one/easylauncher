@@ -245,7 +245,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         } catch (_: PackageManager.NameNotFoundException) {
             return null
         }
-        val bitmap = Bitmap.createBitmap(64, 64, Bitmap.Config.ARGB_8888)
+        val bitmap = Bitmap.createBitmap(96, 96, Bitmap.Config.ARGB_8888)
         icon.setBounds(0, 0, bitmap.width, bitmap.height)
         icon.draw(Canvas(bitmap))
         val png = ByteArrayOutputStream()

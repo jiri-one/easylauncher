@@ -27,6 +27,7 @@ class LauncherController extends ChangeNotifier {
   List<LaunchTarget> _allApps = [];
   List<LaunchTarget> _otherApps = [];
   final _appIcons = <String, Future<Uint8List?>>{};
+  final _appIconBytes = <String, Uint8List?>{};
 
   Future<void> initialize() async {
     await reloadSettings();
@@ -34,6 +35,11 @@ class LauncherController extends ChangeNotifier {
     if (_disposed) return;
     ready = true;
     _events = platform.events.listen((event) {
+      // An updated app may bring a new icon, and a reinstalled one may have one again.
+      if (event == 'appsChanged') {
+        _appIcons.clear();
+        _appIconBytes.clear();
+      }
       if (event == 'appsChanged' || event == 'resume') {
         _refreshTimer?.cancel();
         _refreshTimer = Timer(const Duration(milliseconds: 200), refresh);
@@ -276,8 +282,14 @@ class LauncherController extends ChangeNotifier {
   Future<void> launch(LaunchTarget target) =>
       platform.launchApp(resolve(target) ?? target);
 
-  Future<Uint8List?> appIcon(LaunchTarget app) =>
-      _appIcons.putIfAbsent(app.id, () => platform.getAppIcon(app));
+  Future<Uint8List?> appIcon(LaunchTarget app) => _appIcons.putIfAbsent(
+    app.id,
+    () =>
+        platform.getAppIcon(app).then((bytes) => _appIconBytes[app.id] = bytes),
+  );
+
+  // Lets a rebuilt tile paint a loaded icon in its first frame instead of one frame later.
+  Uint8List? loadedAppIcon(LaunchTarget app) => _appIconBytes[app.id];
 
   Future<void> perform(LaunchAction action) {
     final target = settings.actions[action];

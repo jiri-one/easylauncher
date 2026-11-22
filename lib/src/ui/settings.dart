@@ -139,9 +139,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 value: settings.darkMode,
                 onChanged: !editable
                     ? null
-                    : (value) => controller.update(
-                        settings.copyWith(darkMode: value),
-                      ),
+                    : (value) =>
+                          controller.update(settings.copyWith(darkMode: value)),
               ),
               SwitchListTile(
                 title: const Text('Ikony aplikací'),

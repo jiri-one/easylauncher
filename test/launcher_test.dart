@@ -157,9 +157,17 @@ void main() {
     expect(icon('favorite-test.favoritex1'), findsOneWidget);
 
     final requests = [...platform.iconRequests];
+    expect(requests.toSet(), hasLength(requests.length));
     await tester.tap(openApps);
+    await tester.pump();
+    expect(icon('app-test.kalendxx/test.MainActivity'), findsOneWidget);
     await tester.pumpAndSettle();
     expect(platform.iconRequests, requests);
+
+    platform.eventController.add('appsChanged');
+    await tester.pump(const Duration(milliseconds: 250));
+    await tester.pumpAndSettle();
+    expect(platform.iconRequests.length, greaterThan(requests.length));
   });
 
   testWidgets('upward drag opens apps before the finger is released', (

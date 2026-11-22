@@ -7,22 +7,28 @@ import '../models.dart';
 
 const appIconSize = 32.0;
 
-Widget appIcon(LauncherController controller, LaunchTarget app) =>
-    FutureBuilder<Uint8List?>(
-      key: ValueKey(app.id),
-      future: controller.appIcon(app),
-      builder: (context, snapshot) {
-        final bytes = snapshot.data;
-        return bytes == null
-            ? const SizedBox.shrink()
-            : Image.memory(
-                bytes,
-                width: appIconSize,
-                height: appIconSize,
-                excludeFromSemantics: true,
-              );
-      },
-    );
+Widget appIcon(
+  LauncherController controller,
+  LaunchTarget app,
+) => FutureBuilder<Uint8List?>(
+  key: ValueKey(app.id),
+  future: controller.appIcon(app),
+  initialData: controller.loadedAppIcon(app),
+  builder: (context, snapshot) {
+    final bytes = snapshot.data;
+    // The same square with or without an icon keeps the label still on e-ink.
+    return bytes == null
+        ? const SizedBox.square(dimension: appIconSize)
+        : Image.memory(
+            bytes,
+            width: appIconSize,
+            height: appIconSize,
+            excludeFromSemantics: true,
+            // Refetched bytes after a package change must not blank the icon while decoding.
+            gaplessPlayback: true,
+          );
+  },
+);
 
 class AppsScreen extends StatefulWidget {
   const AppsScreen({
