@@ -102,7 +102,10 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                                     child: Semantics(
                                       button: true,
                                       child: GestureDetector(
-                                        onTap: () => _launch(context, app),
+                                        onTap: () {
+                                          focus.requestFocus();
+                                          _launch(context, app);
+                                        },
                                         child: Container(
                                           alignment: Alignment.center,
                                           padding: const EdgeInsets.symmetric(

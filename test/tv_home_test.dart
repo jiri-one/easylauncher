@@ -65,7 +65,9 @@ void main() {
       expect(color('Kodi'), Colors.white);
       await tester.pump(const Duration(seconds: 3));
       await tester.tap(find.text('Steam Link'), kind: PointerDeviceKind.mouse);
+      await tester.pump();
       expect(platform.calls, ['Restartovat', 'Steam Link']);
+      expect(color('Steam Link'), Colors.white);
     },
     variant: linux,
   );

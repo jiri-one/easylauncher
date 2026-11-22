@@ -46,11 +46,11 @@ To start EasyLauncher with labwc, add this line to `~/.config/labwc/autostart`, 
 GDK_BACKEND=x11 /path/to/easylauncher/build/linux/x64/release/bundle/easylauncher &
 ```
 
-On Wayland, Flutter 3.50's raster thread busy-loops on `wl_display.sync` (about 4,000 round trips per second and 2.8 W of extra power on the NAS). Through Xwayland, the raster thread idles.
+On Wayland, Flutter 3.50's raster thread busy-loops on `wl_display.sync` (about 4,000 round trips per second and 2.8 W of extra power on the NAS). Through Xwayland, the raster thread idles. This needs labwc with Xwayland installed, and the launched apps inherit the variable.
 
 ## Building
 
-The first build uses Flutter 3.47.9 with Dart 3.13.7, the Android SDK, and a JDK compatible with the bundled Gradle version. The minimum supported Android version is Android 7.0 (API 24).
+Builds use Flutter 3.50.1 with Dart 3.14.0, the Android SDK, and a JDK compatible with the bundled Gradle version. The minimum supported Android version is Android 7.0 (API 24).
 
 ```sh
 flutter pub get
