@@ -30,6 +30,8 @@ flutter build linux --release
 
 Vytvoř soubor `easylauncher/apps.json` ve složce `$XDG_CONFIG_HOME` (obvykle `~/.config`). Pořadí v poli `favorites` určuje pořadí dlaždic. Po úpravě souboru EasyLauncher spusť znovu.
 
+Volitelné pole `icon` zobrazí obrázek PNG, JPEG nebo WebP z absolutní cesty.
+
 ```json
 {
   "schemaVersion": 1,

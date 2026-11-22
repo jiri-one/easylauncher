@@ -30,6 +30,8 @@ flutter build linux --release
 
 Create `easylauncher/apps.json` under `$XDG_CONFIG_HOME` (usually `~/.config`). The order in `favorites` is the tile order. Restart EasyLauncher after editing the file.
 
+Use the optional `icon` field to show a PNG, JPEG, or WebP image from an absolute path.
+
 ```json
 {
   "schemaVersion": 1,
