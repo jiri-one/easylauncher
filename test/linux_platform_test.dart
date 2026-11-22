@@ -39,6 +39,27 @@ void main() {
     await expectLater(platform.getApps(), throwsFormatException);
   });
 
+  test('leaves no zombie process behind', () async {
+    await platform.launchApp(
+      LaunchTarget.fromJson({'label': 'Sleep', 'command': 'sleep 1'}),
+    );
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    // Reads /proc directly: starting ps would make Dart reap its children.
+    final zombies = Directory('/proc').listSync().where((entry) {
+      try {
+        final fields = File('${entry.path}/stat')
+            .readAsStringSync()
+            .split(') ')
+            .last
+            .split(' ');
+        return fields[0] == 'Z' && fields[1] == '$pid';
+      } on FileSystemException {
+        return false;
+      }
+    });
+    expect(zombies, isEmpty);
+  });
+
   test('runs the whole command in a shell', () async {
     final made = Directory('${config.path}/My Games');
     await platform.launchApp(

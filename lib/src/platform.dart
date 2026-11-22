@@ -128,11 +128,14 @@ class LinuxLauncherPlatform implements LauncherPlatform {
   @override
   Future<void> saveSettings(String json) async {}
 
+  // A detached start would leave a zombie per launch until the launcher exits.
   @override
-  Future<void> launchApp(LaunchTarget app) => Process.start('/bin/sh', [
+  Future<void> launchApp(LaunchTarget app) => Process.run('/bin/sh', [
     '-c',
+    r'eval "$1" </dev/null >/dev/null 2>&1 &',
+    'sh',
     app.command!,
-  ], mode: ProcessStartMode.detached);
+  ]);
 
   @override
   Future<void> openAction(LaunchAction action) async {}
