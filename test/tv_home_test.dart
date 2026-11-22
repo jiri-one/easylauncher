@@ -46,7 +46,7 @@ void main() {
     (tester) async {
       final platform = await launch(tester);
       Color? color(String label) =>
-          DefaultTextStyle.of(tester.element(find.text(label))).style.color;
+          tester.widget<Text>(find.text(label)).style?.color;
       Future<void> press(LogicalKeyboardKey key) async {
         await tester.sendKeyEvent(key);
         await tester.pump();
@@ -70,6 +70,32 @@ void main() {
     variant: linux,
   );
 
+  testWidgets('arrows continue from the tile highlighted by mouse hover', (
+    tester,
+  ) async {
+    final platform = await launch(tester);
+    Color? color(String label) =>
+        tester.widget<Text>(find.text(label)).style?.color;
+    final mouse = await tester.createGesture(kind: PointerDeviceKind.mouse);
+    await mouse.addPointer(location: const Offset(2, 2));
+    addTearDown(mouse.removePointer);
+    final tile = tester.getRect(
+      find.widgetWithText(FocusableActionDetector, 'ScummVM'),
+    );
+    await mouse.moveTo(tile.centerLeft + const Offset(4, 0));
+    await tester.pump();
+    expect(color('Kodi'), Colors.black);
+    expect(color('ScummVM'), Colors.white);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    expect(color('ScummVM'), Colors.black);
+    expect(color('Steam Link'), Colors.white);
+    expect(tester.binding.hasScheduledFrame, isFalse);
+    expect(platform.calls, isEmpty);
+  }, variant: linux);
+
   testWidgets('a held or repeated Enter starts an app only once', (
     tester,
   ) async {
@@ -91,10 +117,10 @@ void main() {
     tester,
   ) async {
     await launch(tester);
-    final hd = tester.getRect(find.byType(TextButton).first);
+    final hd = tester.getRect(find.byType(FocusableActionDetector).first);
     tester.view.physicalSize = const Size(3840, 2160);
     await tester.pumpAndSettle();
-    final uhd = tester.getRect(find.byType(TextButton).first);
+    final uhd = tester.getRect(find.byType(FocusableActionDetector).first);
     expect(uhd.height, moreOrLessEquals(hd.height * 3));
     expect(uhd.width, moreOrLessEquals(hd.width * 3));
   }, variant: linux);
@@ -104,7 +130,7 @@ void main() {
   ) async {
     await launch(tester, empty: true);
     expect(find.textContaining('easylauncher/apps.json'), findsOneWidget);
-    expect(find.byType(TextButton), findsNothing);
+    expect(find.byType(FocusableActionDetector), findsNothing);
   }, variant: linux);
 
   testWidgets('TV home draws no frame while idle until the clock changes', (

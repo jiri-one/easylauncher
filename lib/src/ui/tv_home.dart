@@ -26,49 +26,30 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
   Future<void> _launch(BuildContext context, LaunchTarget app) async {
     final now = clock.now();
     final last = _launchedAt;
-    if (last != null && now.difference(last) < _launchPause) return;
+    if (last != null) {
+      final elapsed = now.difference(last);
+      if (!elapsed.isNegative && elapsed < _launchPause) return;
+    }
     _launchedAt = now;
     try {
       await controller.launch(app);
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Nepodařilo se spustit ${app.label}.')),
-        snackBarAnimationStyle: AnimationStyle.noAnimation,
-      );
+      ScaffoldMessenger.of(context)
+        ..removeCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(content: Text('Nepodařilo se spustit ${app.label}.')),
+          snackBarAnimationStyle: AnimationStyle.noAnimation,
+        );
     }
   }
-
-  static final _tileStyle = ButtonStyle(
-    animationDuration: Duration.zero,
-    overlayColor: const WidgetStatePropertyAll(Colors.transparent),
-    backgroundColor: WidgetStateProperty.resolveWith(
-      (states) =>
-          states.contains(WidgetState.focused) ? Colors.black : Colors.white,
-    ),
-    foregroundColor: WidgetStateProperty.resolveWith(
-      (states) =>
-          states.contains(WidgetState.focused) ? Colors.white : Colors.black,
-    ),
-    side: const WidgetStatePropertyAll(
-      BorderSide(color: Colors.black, width: 2),
-    ),
-    shape: const WidgetStatePropertyAll(
-      RoundedRectangleBorder(
-        borderRadius: BorderRadius.all(Radius.circular(12)),
-      ),
-    ),
-    textStyle: const WidgetStatePropertyAll(
-      TextStyle(fontSize: 42, fontWeight: FontWeight.w600),
-    ),
-  );
 
   @override
   Widget build(BuildContext context) => ListenableBuilder(
     listenable: controller,
     builder: (context, _) {
       final favorites = controller.apps;
-      return FittedBox(
+      final canvas = FittedBox(
         child: SizedBox.fromSize(
           size: _canvas,
           child: Scaffold(
@@ -106,15 +87,58 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                           itemCount: favorites.length,
                           itemBuilder: (context, index) {
                             final app = favorites[index];
-                            return TextButton(
+                            return FocusableActionDetector(
                               autofocus: index == 0,
-                              style: _tileStyle,
-                              onPressed: () => _launch(context, app),
-                              child: Text(
-                                app.label,
-                                textAlign: TextAlign.center,
-                                maxLines: 2,
-                                overflow: TextOverflow.ellipsis,
+                              mouseCursor: SystemMouseCursors.click,
+                              actions: {
+                                ActivateIntent: CallbackAction<ActivateIntent>(
+                                  onInvoke: (_) => _launch(context, app),
+                                ),
+                              },
+                              child: Builder(
+                                builder: (context) {
+                                  final focus = Focus.of(context);
+                                  final focused = focus.hasFocus;
+                                  return Listener(
+                                    onPointerHover: (_) => focus.requestFocus(),
+                                    child: Semantics(
+                                      button: true,
+                                      child: GestureDetector(
+                                        behavior: HitTestBehavior.opaque,
+                                        onTap: () => _launch(context, app),
+                                        child: Container(
+                                          alignment: Alignment.center,
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 8,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: focused
+                                                ? Colors.black
+                                                : Colors.white,
+                                            border: Border.all(width: 2),
+                                            borderRadius: BorderRadius.circular(
+                                              12,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            app.label,
+                                            style: TextStyle(
+                                              color: focused
+                                                  ? Colors.white
+                                                  : Colors.black,
+                                              fontSize: 42,
+                                              fontWeight: FontWeight.w600,
+                                            ),
+                                            textAlign: TextAlign.center,
+                                            maxLines: 2,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
                               ),
                             );
                           },
@@ -128,6 +152,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           ),
         ),
       );
+      return ColoredBox(color: Colors.white, child: canvas);
     },
   );
 }
