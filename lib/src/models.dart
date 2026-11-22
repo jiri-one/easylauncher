@@ -6,6 +6,7 @@ class LaunchTarget {
     required this.activityName,
     required this.label,
     this.command,
+    this.icon,
   });
 
   factory LaunchTarget.fromJson(Map<String, dynamic> json) {
@@ -15,11 +16,13 @@ class LaunchTarget {
         command.trim().isNotEmpty &&
         label is String &&
         label.trim().isNotEmpty) {
+      final icon = json['icon'];
       return LaunchTarget(
         packageName: command,
         activityName: '',
         label: label.trim(),
         command: command,
+        icon: icon is String && icon.startsWith('/') ? icon : null,
       );
     }
     final package = json['packageName'];
@@ -44,6 +47,7 @@ class LaunchTarget {
   final String activityName;
   final String label;
   final String? command;
+  final String? icon;
 
   String get id =>
       command == null ? '$packageName/$activityName' : '$label/$command';
@@ -53,6 +57,7 @@ class LaunchTarget {
     activityName: activityName,
     label: name,
     command: command,
+    icon: icon,
   );
 
   Map<String, dynamic> toJson() => {

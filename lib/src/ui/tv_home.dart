@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:clock/clock.dart';
 import 'package:material_ui/material_ui.dart';
 
@@ -36,7 +38,13 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
       ScaffoldMessenger.of(context)
         ..removeCurrentSnackBar()
         ..showSnackBar(
-          SnackBar(content: Text('Nepodařilo se spustit ${app.label}.')),
+          SnackBar(
+            backgroundColor: Colors.black,
+            content: Text(
+              'Nepodařilo se spustit ${app.label}.',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
           snackBarAnimationStyle: AnimationStyle.noAnimation,
         );
     }
@@ -51,11 +59,15 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
         child: SizedBox.fromSize(
           size: _canvas,
           child: Scaffold(
+            backgroundColor: Colors.black,
             body: Padding(
               padding: const EdgeInsets.all(32),
               child: Column(
                 children: [
-                  const ClockHeader(),
+                  DefaultTextStyle.merge(
+                    style: const TextStyle(color: Colors.white),
+                    child: const ClockHeader(),
+                  ),
                   const SizedBox(height: 24),
                   if (!controller.ready || favorites.isEmpty)
                     Expanded(
@@ -66,6 +78,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                               : 'Zkontroluj seznam oblíbených v easylauncher/apps.json '
                                     'v konfigurační složce a spusť EasyLauncher znovu.',
                           textAlign: TextAlign.center,
+                          style: const TextStyle(color: Colors.white),
                         ),
                       ),
                     )
@@ -97,6 +110,40 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                                 builder: (context) {
                                   final focus = Focus.of(context);
                                   final focused = focus.hasFocus;
+                                  final icon = app.icon;
+                                  final label = Text(
+                                    app.label,
+                                    style: TextStyle(
+                                      color: focused
+                                          ? Colors.black
+                                          : Colors.white,
+                                      fontSize: 42,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  );
+                                  final content = icon == null
+                                      ? label
+                                      : Column(
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            TickerMode(
+                                              enabled: false,
+                                              child: Image.file(
+                                                File(icon),
+                                                width: 56,
+                                                height: 48,
+                                                fit: BoxFit.contain,
+                                                excludeFromSemantics: true,
+                                                errorBuilder: (_, _, _) =>
+                                                    const SizedBox.shrink(),
+                                              ),
+                                            ),
+                                            Flexible(child: label),
+                                          ],
+                                        );
                                   return Listener(
                                     onPointerHover: (_) => focus.requestFocus(),
                                     child: Semantics(
@@ -114,26 +161,17 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                                           ),
                                           decoration: BoxDecoration(
                                             color: focused
-                                                ? Colors.black
-                                                : Colors.white,
-                                            border: Border.all(width: 2),
+                                                ? Colors.white
+                                                : Colors.black,
+                                            border: Border.all(
+                                              color: Colors.white,
+                                              width: 2,
+                                            ),
                                             borderRadius: BorderRadius.circular(
                                               12,
                                             ),
                                           ),
-                                          child: Text(
-                                            app.label,
-                                            style: TextStyle(
-                                              color: focused
-                                                  ? Colors.white
-                                                  : Colors.black,
-                                              fontSize: 42,
-                                              fontWeight: FontWeight.w600,
-                                            ),
-                                            textAlign: TextAlign.center,
-                                            maxLines: 2,
-                                            overflow: TextOverflow.ellipsis,
-                                          ),
+                                          child: content,
                                         ),
                                       ),
                                     ),
@@ -152,7 +190,7 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
           ),
         ),
       );
-      return ColoredBox(color: Colors.white, child: canvas);
+      return ColoredBox(color: Colors.black, child: canvas);
     },
   );
 }

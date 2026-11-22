@@ -18,6 +18,7 @@ void main() {
           'packageName': 'test.normal',
           'activityName': 'test.Normal',
           'label': 'Normal',
+          'icon': '/icons/normal.png',
         },
         {
           'packageName': 'test.long',
@@ -28,6 +29,7 @@ void main() {
     );
     final apps = await AndroidLauncherPlatform().getApps();
     expect(apps, hasLength(2));
+    expect(apps.first.icon, isNull);
     expect(apps.last.label, longLabel);
     expect(
       LauncherSettings.decode(LauncherSettings(favorites: apps).encode())

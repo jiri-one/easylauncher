@@ -19,13 +19,14 @@ void main() {
   test('reads the favorites in profile order', () async {
     await appsFile.writeAsString('''
       {"schemaVersion": 1, "favorites": [
-        {"label": "Kodi", "command": "kodi"},
+        {"label": "Kodi", "command": "kodi", "icon": "/icons/kodi.png"},
         {"label": "Vypnout", "command": "systemctl poweroff"}
       ]}
     ''');
     final apps = await platform.getApps();
     expect(apps.map((app) => app.label), ['Kodi', 'Vypnout']);
     expect(apps.map((app) => app.command), ['kodi', 'systemctl poweroff']);
+    expect(apps.map((app) => app.icon), ['/icons/kodi.png', null]);
   });
 
   test('reports missing, malformed and invalid app lists', () async {
