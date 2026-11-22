@@ -56,7 +56,7 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
           ? TvHomeScreen(controller: widget.controller)
           : Launcher(controller: widget.controller),
       builder: (context, home) {
-        final theme = !linux && widget.controller.settings.darkMode
+        final theme = widget.controller.settings.darkMode
             ? _darkTheme
             : _lightTheme;
         return MaterialApp(
@@ -67,12 +67,10 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           theme: theme,
           themeAnimationDuration: Duration.zero,
-          builder: linux
-              ? null
-              : (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
-                  value: theme.appBarTheme.systemOverlayStyle!,
-                  child: child!,
-                ),
+          builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
+            value: theme.appBarTheme.systemOverlayStyle!,
+            child: child!,
+          ),
           home: home,
         );
       },
@@ -85,29 +83,15 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
     final icons = dark ? Brightness.light : Brightness.dark;
     return ThemeData(
       useMaterial3: true,
-      colorScheme: dark
-          ? const ColorScheme(
-              brightness: Brightness.dark,
-              primary: Colors.white,
-              onPrimary: Colors.black,
-              secondary: Colors.white,
-              onSecondary: Colors.black,
-              surface: Colors.black,
-              onSurface: Colors.white,
-              outline: Colors.white,
-              error: Colors.white,
-              onError: Colors.black,
-              surfaceTint: Colors.transparent,
-            )
-          : const ColorScheme.light(
-              primary: Colors.black,
-              onPrimary: Colors.white,
-              secondary: Colors.black,
-              surface: Colors.white,
-              onSurface: Colors.black,
-              outline: Colors.black,
-              surfaceTint: Colors.transparent,
-            ),
+      colorScheme: (dark ? ColorScheme.dark : ColorScheme.light)(
+        primary: foreground,
+        onPrimary: background,
+        secondary: foreground,
+        surface: background,
+        onSurface: foreground,
+        outline: foreground,
+        surfaceTint: Colors.transparent,
+      ),
       scaffoldBackgroundColor: background,
       splashFactory: NoSplash.splashFactory,
       highlightColor: Colors.transparent,

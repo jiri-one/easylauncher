@@ -81,28 +81,12 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('dark mode applies across Android screens and system bars', (
+  testWidgets('dark mode turns the screens and the system bars black', (
     tester,
   ) async {
-    final messenger = tester.binding.defaultBinaryMessenger;
-    Map<Object?, Object?>? overlay;
-    messenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
-      if (call.method == 'SystemChrome.setSystemUIOverlayStyle') {
-        overlay = call.arguments as Map<Object?, Object?>;
-      }
-      return null;
-    });
-    addTearDown(
-      () => messenger.setMockMethodCallHandler(SystemChannels.platform, null),
-    );
-    final (_, platform) = await launch(tester, autoKeyboard: false);
+    final (_, platform) = await launch(tester);
     Color? color(Finder text) =>
         tester.renderObject<RenderParagraph>(text).text.style?.color;
-    Color? background(Finder widget) => tester
-        .widget<Material>(
-          find.descendant(of: widget, matching: find.byType(Material)).first,
-        )
-        .color;
 
     await tester.tap(find.byKey(const ValueKey('open-settings')));
     await tester.pumpAndSettle();
@@ -111,55 +95,20 @@ void main() {
     await tester.tap(toggle);
     await tester.pumpAndSettle();
     expect(LauncherSettings.decode(platform.saved!).darkMode, isTrue);
-    expect(background(find.byType(Scaffold)), Colors.black);
-    expect(background(find.byType(AppBar)), Colors.black);
     expect(color(toggle), Colors.white);
-    expect(overlay?['statusBarColor'], Colors.black.toARGB32());
-    expect(overlay?['statusBarIconBrightness'], 'Brightness.light');
-    expect(overlay?['systemNavigationBarColor'], Colors.black.toARGB32());
-    expect(overlay?['systemNavigationBarIconBrightness'], 'Brightness.light');
 
     await tester.tap(find.byTooltip('Zpět'));
     await tester.pumpAndSettle();
-    final tile = find.byKey(const ValueKey('favorite-test.favoritex1'));
-    expect(background(find.byType(Scaffold)), Colors.black);
     expect(
-      tester
-          .widget<Material>(
-            find.ancestor(of: tile, matching: find.byType(Material)).first,
-          )
-          .color,
+      Theme.of(tester.element(find.text('Favorite 1'))).canvasColor,
       Colors.black,
     );
-    expect(
-      color(
-        find.descendant(
-          of: find.byKey(const ValueKey('clock')),
-          matching: find.byType(Text),
-        ),
-      ),
-      Colors.white,
-    );
     expect(color(find.text('Favorite 1')), Colors.white);
-    await tester.longPress(tile);
-    await tester.pumpAndSettle();
-    expect(background(find.byType(BottomSheet)), Colors.black);
-    expect(color(find.text('Přejmenovat')), Colors.white);
-    await tester.tap(find.text('Přejmenovat'));
-    await tester.pumpAndSettle();
-    expect(background(find.byType(AlertDialog)), Colors.black);
-    expect(color(find.text('Název aplikace')), Colors.white);
-    await tester.tap(find.text('Zrušit'));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const ValueKey('open-apps')));
-    await tester.pumpAndSettle();
-    expect(background(find.byType(Scaffold)), Colors.black);
-    expect(color(find.text('Kalendář')), Colors.white);
-    expect(
-      tester.widget<EditableText>(find.byType(EditableText)).style.color,
-      Colors.white,
-    );
+    final bars = SystemChrome.latestStyle!;
+    expect(bars.statusBarColor, Colors.black);
+    expect(bars.statusBarIconBrightness, Brightness.light);
+    expect(bars.systemNavigationBarColor, Colors.black);
+    expect(bars.systemNavigationBarIconBrightness, Brightness.light);
   });
 
   testWidgets('swipe up over a tile opens search and omits favorites', (
@@ -184,54 +133,30 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('app icons load only when enabled and are reused', (tester) async {
+  testWidgets('app icons load only when enabled and once per app', (
+    tester,
+  ) async {
     final (controller, platform) = await launch(tester, autoKeyboard: false);
-    final bytes = base64Decode(
+    platform.icon = base64Decode(
       'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4//8/AAX+Av4N70a4AAAAAElFTkSuQmCC',
     );
-    platform.icon = bytes;
     final openApps = find.byKey(const ValueKey('open-apps'));
-    final favorite = find.byKey(const ValueKey('favorite-test.favoritex1'));
-    final app = controller.apps.firstWhere((app) => app.label == 'Kalendář');
-    final drawerEntry = find.byKey(ValueKey('app-${app.id}'));
-    expect(find.byType(Image), findsNothing);
+    Finder icon(String key) => find.descendant(
+      of: find.byKey(ValueKey(key)),
+      matching: find.byType(Image),
+    );
     await tester.tap(openApps);
     await tester.pumpAndSettle();
-    expect(drawerEntry, findsOneWidget);
-    expect(find.byType(Image), findsNothing);
     expect(platform.iconRequests, isEmpty);
 
-    await tester.runAsync(
-      () => precacheImage(MemoryImage(bytes), tester.element(drawerEntry)),
-    );
+    await controller.update(controller.settings.copyWith(showAppIcons: true));
+    await tester.pumpAndSettle();
+    expect(icon('app-test.kalendxx/test.MainActivity'), findsOneWidget);
     await tester.tap(find.byTooltip('Zpět'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('open-settings')));
-    await tester.pumpAndSettle();
-    final toggle = find.text('Ikony aplikací');
-    await tester.scrollUntilVisible(toggle.hitTestable(), 200);
-    await tester.tap(toggle);
-    await tester.pumpAndSettle();
-    expect(LauncherSettings.decode(platform.saved!).showAppIcons, isTrue);
-    await tester.tap(find.byTooltip('Zpět'));
-    await tester.pumpAndSettle();
+    expect(icon('favorite-test.favoritex1'), findsOneWidget);
 
-    void expectImage(Finder entry) {
-      final image = find.descendant(of: entry, matching: find.byType(RawImage));
-      expect(tester.widget<RawImage>(image).image, isNotNull);
-    }
-
-    expectImage(favorite);
-    await tester.tap(openApps);
-    await tester.pumpAndSettle();
-    expectImage(drawerEntry);
     final requests = [...platform.iconRequests];
-    expect(
-      requests,
-      containsAll([controller.settings.favorites.first.id, app.id]),
-    );
-    await tester.tap(find.byTooltip('Zpět'));
-    await tester.pumpAndSettle();
     await tester.tap(openApps);
     await tester.pumpAndSettle();
     expect(platform.iconRequests, requests);

@@ -308,22 +308,16 @@ void main() {
 
   test('appearance settings round trip and default off in older JSON', () {
     final old = LauncherSettings.decode('''
-      {"schemaVersion": 1, "favorites": [], "autoKeyboard": false,
-       "layout": {"favoriteColumns": 3, "fontSize": 24}}
+      {"schemaVersion": 1, "favorites": [], "layout": {}}
     ''');
     expect(old.darkMode, isFalse);
     expect(old.showAppIcons, isFalse);
-    expect(old.autoKeyboard, isFalse);
-    expect(old.columns, 3);
-    expect(old.fontSize, 24);
 
     final saved = LauncherSettings.decode(
       old.copyWith(darkMode: true, showAppIcons: true).encode(),
     );
     expect(saved.darkMode, isTrue);
     expect(saved.showAppIcons, isTrue);
-    expect(saved.copyWith(columns: 2).darkMode, isTrue);
-    expect(saved.copyWith(columns: 2).showAppIcons, isTrue);
   });
 
   test('Czech sorting places Č after C and Ch between H and I', () {

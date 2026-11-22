@@ -42,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen> {
     final controller = widget.controller;
     final favorites = controller.settings.favorites;
     final showAppIcons = controller.settings.showAppIcons;
-    final colors = Theme.of(context).colorScheme;
     return GestureDetector(
       key: const ValueKey('home-gestures'),
       behavior: HitTestBehavior.opaque,
@@ -170,10 +169,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                   onTap: () => widget.onLaunch(app),
                                   onLongPress: () => widget.onMenu(app),
                                   child: Material(
-                                    color: colors.surface,
                                     shape: RoundedRectangleBorder(
                                       side: BorderSide(
-                                        color: colors.onSurface,
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface,
                                         width: installed != null ? 1.5 : 1,
                                       ),
                                       borderRadius: BorderRadius.circular(12),
@@ -193,7 +193,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                         child: showAppIcons && installed != null
                                             ? Column(
                                                 children: [
-                                                  appIcon(controller, installed),
+                                                  appIcon(
+                                                    controller,
+                                                    installed,
+                                                  ),
                                                   Expanded(child: text),
                                                 ],
                                               )
@@ -248,12 +251,8 @@ class AdaptiveLabel extends StatelessWidget {
   final double fontSize;
 
   static TextStyle _style(BuildContext context, double size) =>
-      DefaultTextStyle.of(context).style.copyWith(
-        fontSize: size,
-        height: 1.04,
-        fontWeight: FontWeight.w600,
-        color: Theme.of(context).colorScheme.onSurface,
-      );
+      DefaultTextStyle.of(context).style
+          .copyWith(fontSize: size, height: 1.04, fontWeight: FontWeight.w600);
 
   static double minimumHeight(
     BuildContext context,

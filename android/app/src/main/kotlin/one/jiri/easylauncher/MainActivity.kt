@@ -249,7 +249,8 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         icon.setBounds(0, 0, bitmap.width, bitmap.height)
         icon.draw(Canvas(bitmap))
         val png = ByteArrayOutputStream()
-        return if (bitmap.compress(Bitmap.CompressFormat.PNG, 100, png)) png.toByteArray() else null
+        bitmap.compress(Bitmap.CompressFormat.PNG, 100, png)
+        return png.toByteArray()
     }
 
     private fun launchApp(targetPackage: String, activityName: String?) {
