@@ -46,7 +46,7 @@ To start EasyLauncher with labwc, add this line to `~/.config/labwc/autostart`, 
 GDK_BACKEND=x11 /path/to/easylauncher/build/linux/x64/release/bundle/easylauncher &
 ```
 
-On Wayland, Flutter 3.50's raster thread busy-loops on `wl_display.sync` (about 4,000 round trips per second and 2.8 W of extra power on the NAS). Through Xwayland, the raster thread idles. This needs labwc with Xwayland installed, and the launched apps inherit the variable.
+On Wayland, Flutter 3.50's raster thread busy-loops on `wl_display.sync` (about 4,000 round trips per second and 2.8 W of extra power on the NAS). Through Xwayland, the raster thread idles. This needs labwc with Xwayland installed, and the launched apps inherit the variable. It is Flutter issue [#196529](https://github.com/flutter/flutter/issues/196529); drop the variable once a Flutter release fixes it.
 
 ## Building
 

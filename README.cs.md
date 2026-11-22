@@ -46,7 +46,7 @@ Pro spuštění s labwc vlož do `~/.config/labwc/autostart` následující řá
 GDK_BACKEND=x11 /cesta/k/easylauncher/build/linux/x64/release/bundle/easylauncher &
 ```
 
-Na Waylandu vlákno vykreslování Flutteru 3.50 neustále volá `wl_display.sync` (asi 4 000 synchronizací za sekundu a o 2,8 W vyšší spotřeba NASu). Při spuštění přes Xwayland je vlákno v klidu. Potřebuje to labwc s nainstalovaným Xwaylandem a proměnnou zdědí i spouštěné aplikace.
+Na Waylandu vlákno vykreslování Flutteru 3.50 neustále volá `wl_display.sync` (asi 4 000 synchronizací za sekundu a o 2,8 W vyšší spotřeba NASu). Při spuštění přes Xwayland je vlákno v klidu. Potřebuje to labwc s nainstalovaným Xwaylandem a proměnnou zdědí i spouštěné aplikace. Jde o chybu Flutteru [#196529](https://github.com/flutter/flutter/issues/196529); až ji některé vydání opraví, proměnnou vynech.
 
 ## Sestavení
 
