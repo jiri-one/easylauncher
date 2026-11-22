@@ -2,7 +2,7 @@ import 'package:clock/clock.dart';
 import 'package:easylauncher/main.dart';
 import 'package:easylauncher/src/controller.dart';
 import 'package:easylauncher/src/models.dart';
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
