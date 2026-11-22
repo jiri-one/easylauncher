@@ -299,9 +299,9 @@ class AdaptiveLabel extends StatelessWidget {
 }
 
 class ClockHeader extends StatefulWidget {
-  const ClockHeader({super.key, required this.onClock, required this.onDate});
-  final VoidCallback onClock;
-  final VoidCallback onDate;
+  const ClockHeader({super.key, this.onClock, this.onDate});
+  final VoidCallback? onClock;
+  final VoidCallback? onDate;
 
   @override
   State<ClockHeader> createState() => _ClockHeaderState();
@@ -364,8 +364,8 @@ class _ClockHeaderState extends State<ClockHeader> with WidgetsBindingObserver {
       mainAxisSize: MainAxisSize.min,
       children: [
         Semantics(
-          label: 'Budík, $_time',
-          button: true,
+          label: widget.onClock == null ? _time : 'Budík, $_time',
+          button: widget.onClock != null,
           excludeSemantics: true,
           onTap: widget.onClock,
           child: InkWell(
