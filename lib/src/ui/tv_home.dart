@@ -115,7 +115,8 @@ class _TvHomeScreenState extends State<TvHomeScreen> {
                                       fontWeight: FontWeight.w600,
                                     ),
                                     textAlign: TextAlign.center,
-                                    maxLines: 2,
+                                    // Two lines do not fit under an icon in the 140 px tile.
+                                    maxLines: icon == null ? 2 : 1,
                                     overflow: TextOverflow.ellipsis,
                                   );
                                   final content = icon == null

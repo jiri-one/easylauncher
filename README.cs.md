@@ -36,7 +36,7 @@ Volitelné pole `icon` zobrazí obrázek PNG, JPEG nebo WebP z absolutní cesty.
 {
   "schemaVersion": 1,
   "favorites": [
-    {"label": "Kodi", "command": "kodi"},
+    {"label": "Kodi", "command": "kodi", "icon": "/home/you/.config/easylauncher/kodi.png"},
     {"label": "ScummVM", "command": "scummvm"}
   ]
 }

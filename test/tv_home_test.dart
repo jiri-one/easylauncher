@@ -7,6 +7,7 @@ import 'package:easylauncher/main.dart';
 import 'package:easylauncher/src/controller.dart';
 import 'package:easylauncher/src/models.dart';
 import 'package:material_ui/material_ui.dart';
+import 'package:flutter/rendering.dart' show RenderParagraph;
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -20,30 +21,28 @@ void main() {
 
   Future<FakePlatform> launch(
     WidgetTester tester, {
-    bool empty = false,
     Map<String, String> icons = const {},
+    List<String> names = const [
+      'Kodi',
+      'ScummVM',
+      'Steam Link',
+      'Vypnout',
+      'Restartovat',
+    ],
   }) async {
     tester.view.physicalSize = const Size(1280, 720);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final platform = FakePlatform();
-    if (!empty) {
-      platform.apps = [
-        for (final name in [
-          'Kodi',
-          'ScummVM',
-          'Steam Link',
-          'Vypnout',
-          'Restartovat',
-        ])
-          LaunchTarget.fromJson({
-            'label': name,
-            'command': name,
-            'icon': icons[name],
-          }),
-      ];
-    }
+    platform.apps = [
+      for (final name in names)
+        LaunchTarget.fromJson({
+          'label': name,
+          'command': name,
+          'icon': icons[name],
+        }),
+    ];
     await tester.pumpWidget(
       EasyLauncherApp(controller: LauncherController(platform: platform)),
     );
@@ -162,7 +161,7 @@ void main() {
   testWidgets('an empty app list points to the configuration file', (
     tester,
   ) async {
-    await launch(tester, empty: true);
+    await launch(tester, names: const []);
     expect(find.textContaining('easylauncher/apps.json'), findsOneWidget);
     expect(find.byType(FocusableActionDetector), findsNothing);
     expect(
@@ -203,6 +202,24 @@ void main() {
     expect(
       tester.getBottomLeft(image).dy,
       lessThanOrEqualTo(tester.getTopLeft(find.text('Kodi')).dy),
+    );
+  }, variant: linux);
+
+  testWidgets('a long label under an icon is cut to one line, not clipped', (
+    tester,
+  ) async {
+    const long = 'Vypnout počítač hned teď';
+    final icon = writeIcon();
+    await tester.runAsync(() async {
+      await launch(tester, names: [long], icons: {long: icon.path});
+      final element = find.byType(Image).evaluate().single;
+      await precacheImage((element.widget as Image).image, element);
+    });
+    await tester.pump();
+    final label = tester.renderObject<RenderParagraph>(find.text(long));
+    expect(
+      label.getMaxIntrinsicHeight(label.size.width),
+      lessThanOrEqualTo(label.size.height),
     );
   }, variant: linux);
 

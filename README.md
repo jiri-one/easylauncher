@@ -36,7 +36,7 @@ Use the optional `icon` field to show a PNG, JPEG, or WebP image from an absolut
 {
   "schemaVersion": 1,
   "favorites": [
-    {"label": "Kodi", "command": "kodi"},
+    {"label": "Kodi", "command": "kodi", "icon": "/home/you/.config/easylauncher/kodi.png"},
     {"label": "ScummVM", "command": "scummvm"}
   ]
 }
