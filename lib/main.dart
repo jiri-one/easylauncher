@@ -1,5 +1,4 @@
-import 'dart:io';
-
+import 'package:flutter/foundation.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -12,20 +11,18 @@ import 'src/ui/tv_home.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await initializeDateFormatting('cs_CZ');
-  if (!Platform.isLinux) {
-    SystemChrome.setSystemUIOverlayStyle(
-      const SystemUiOverlayStyle(
-        statusBarColor: Colors.white,
-        statusBarIconBrightness: Brightness.dark,
-        systemNavigationBarColor: Colors.white,
-        systemNavigationBarIconBrightness: Brightness.dark,
-      ),
-    );
-  }
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.white,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Colors.white,
+      systemNavigationBarIconBrightness: Brightness.dark,
+    ),
+  );
   runApp(
     EasyLauncherApp(
       controller: LauncherController(
-        platform: Platform.isLinux
+        platform: defaultTargetPlatform == TargetPlatform.linux
             ? LinuxLauncherPlatform()
             : AndroidLauncherPlatform(),
         initialProfile: const String.fromEnvironment('INITIAL_PROFILE'),
@@ -109,7 +106,7 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
         },
       ),
     ),
-    home: widget.controller.platform is LinuxLauncherPlatform
+    home: defaultTargetPlatform == TargetPlatform.linux
         ? TvHomeScreen(controller: widget.controller)
         : Launcher(controller: widget.controller),
   );

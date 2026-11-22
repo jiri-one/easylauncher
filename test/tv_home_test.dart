@@ -4,63 +4,36 @@ import 'package:clock/clock.dart';
 import 'package:easylauncher/main.dart';
 import 'package:easylauncher/src/controller.dart';
 import 'package:easylauncher/src/models.dart';
-import 'package:easylauncher/src/platform.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
-class _TestLinuxPlatform extends LinuxLauncherPlatform {
-  _TestLinuxPlatform(this.apps);
-
-  final List<LaunchTarget>? apps;
-  final launched = <String>[];
-
-  @override
-  Future<List<LaunchTarget>> getApps() async =>
-      apps ?? (throw const FormatException());
-
-  @override
-  Future<String?> loadSettings() async => null;
-
-  @override
-  Future<void> saveSettings(String json) async {}
-
-  @override
-  Future<void> launchApp(LaunchTarget target) async =>
-      launched.add(target.label);
-}
+import 'support/fake_platform.dart';
 
 void main() {
   setUpAll(() => initializeDateFormatting('cs_CZ'));
 
   const linux = TargetPlatformVariant({TargetPlatform.linux});
 
-  Future<_TestLinuxPlatform> launch(
-    WidgetTester tester, {
-    bool broken = false,
-  }) async {
+  Future<FakePlatform> launch(WidgetTester tester, {bool empty = false}) async {
     tester.view.physicalSize = const Size(1280, 720);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
-    final platform = _TestLinuxPlatform(
-      broken
-          ? null
-          : [
-              for (final name in [
-                'Kodi',
-                'ScummVM',
-                'Steam Link',
-                'Vypnout',
-                'Restartovat',
-              ])
-                LaunchTarget.fromJson({
-                  'label': name,
-                  'command': name,
-                }, linux: true),
-            ],
-    );
+    final platform = FakePlatform();
+    if (!empty) {
+      platform.apps = [
+        for (final name in [
+          'Kodi',
+          'ScummVM',
+          'Steam Link',
+          'Vypnout',
+          'Restartovat',
+        ])
+          LaunchTarget.fromJson({'label': name, 'command': name}),
+      ];
+    }
     await tester.pumpWidget(
       EasyLauncherApp(controller: LauncherController(platform: platform)),
     );
@@ -91,15 +64,15 @@ void main() {
       await press(LogicalKeyboardKey.arrowUp);
       expect(color('Kodi'), Colors.white);
       await tester.tap(find.text('Steam Link'), kind: PointerDeviceKind.mouse);
-      expect(platform.launched, ['Restartovat', 'Steam Link']);
+      expect(platform.calls, ['Restartovat', 'Steam Link']);
     },
     variant: linux,
   );
 
-  testWidgets('an unreadable app list points to the configuration file', (
+  testWidgets('an empty app list points to the configuration file', (
     tester,
   ) async {
-    await launch(tester, broken: true);
+    await launch(tester, empty: true);
     expect(find.textContaining('easylauncher/apps.json'), findsOneWidget);
     expect(find.byType(TextButton), findsNothing);
   }, variant: linux);

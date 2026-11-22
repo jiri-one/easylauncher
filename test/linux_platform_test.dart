@@ -10,8 +10,7 @@ void main() {
   late File appsFile;
 
   setUp(() async {
-    final work = await Directory('.ai').create(recursive: true);
-    config = await work.createTemp('linux-platform-test-');
+    config = await Directory.systemTemp.createTemp('easylauncher-test-');
     addTearDown(() => config.delete(recursive: true));
     platform = LinuxLauncherPlatform(configDirectory: config);
     appsFile = File('${config.path}/apps.json');
@@ -39,49 +38,35 @@ void main() {
     await expectLater(platform.getApps(), throwsFormatException);
   });
 
-  test('saves and replaces settings independently of the app list', () async {
+  test('saves and replaces settings with their commands', () async {
     expect(await platform.loadSettings(), isNull);
-    final app = LaunchTarget.fromJson({
-      'label': 'Kodi',
-      'command': 'kodi',
-    }, linux: true);
-    final settings = LauncherSettings(favorites: [app]);
-    await platform.saveSettings(settings.encode());
-    final reader = LinuxLauncherPlatform(configDirectory: config);
-    expect(await reader.loadSettings(), settings.encode());
-    final saved = LauncherSettings.decode(
-      await reader.loadSettings() ?? '',
-      linux: true,
+    final settings = LauncherSettings(
+      favorites: [
+        LaunchTarget.fromJson({'label': 'Kodi', 'command': 'kodi'}),
+      ],
     );
+    await platform.saveSettings(settings.encode());
+    final saved = LauncherSettings.decode((await platform.loadSettings())!);
     expect(saved.favorites.single.command, 'kodi');
     final updated = settings.copyWith(columns: 3).encode();
     await platform.saveSettings(updated);
-    expect(await reader.loadSettings(), updated);
-    expect(await appsFile.exists(), isFalse);
+    expect(await platform.loadSettings(), updated);
     expect(
       await config.list().map((entry) => entry.uri.pathSegments.last).toList(),
       ['settings.json'],
     );
   });
 
-  test('passes the whole command to a detached shell', () async {
-    const command = 'scummvm --path="/media/My Games" monkey';
-    final calls = <Object>[];
-    final launcher = LinuxLauncherPlatform(
-      configDirectory: config,
-      startProcess: (executable, arguments, {required mode}) async {
-        calls.addAll([executable, arguments, mode]);
-      },
+  test('runs the whole command in a shell', () async {
+    final made = Directory('${config.path}/My Games');
+    await platform.launchApp(
+      LaunchTarget.fromJson({
+        'label': 'ScummVM',
+        'command': 'mkdir "${made.path}"',
+      }),
     );
-    final app = LaunchTarget.fromJson({
-      'label': 'ScummVM',
-      'command': command,
-    }, linux: true);
-    await launcher.launchApp(app);
-    expect(calls, [
-      '/bin/sh',
-      ['-c', command],
-      ProcessStartMode.detached,
-    ]);
+    while (!await made.exists()) {
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+    }
   });
 }

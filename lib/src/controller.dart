@@ -47,10 +47,7 @@ class LauncherController extends ChangeNotifier {
       final source = saved ?? initialProfile;
       final loaded = source.isEmpty
           ? LauncherSettings()
-          : LauncherSettings.decode(
-              source,
-              linux: platform is LinuxLauncherPlatform,
-            );
+          : LauncherSettings.decode(source);
       if (_disposed) return;
       settings = loaded;
       settingsAvailable = true;

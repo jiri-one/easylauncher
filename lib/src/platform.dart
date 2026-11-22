@@ -92,24 +92,14 @@ class AndroidLauncherPlatform implements LauncherPlatform {
 }
 
 class LinuxLauncherPlatform implements LauncherPlatform {
-  LinuxLauncherPlatform({
-    Directory? configDirectory,
-    this._startProcess = Process.start,
-  }) : _configDirectory = configDirectory ?? _defaultDirectory();
+  LinuxLauncherPlatform({Directory? configDirectory})
+    : _configDirectory = configDirectory ?? _defaultDirectory();
 
   final Directory _configDirectory;
-  final Future<void> Function(
-    String,
-    List<String>, {
-    required ProcessStartMode mode,
-  })
-  _startProcess;
 
   static Directory _defaultDirectory() {
-    final xdg = Platform.environment['XDG_CONFIG_HOME'];
-    final root = xdg != null && xdg.startsWith('/')
-        ? xdg
-        : '${Platform.environment['HOME']}/.config';
+    final env = Platform.environment;
+    final root = env['XDG_CONFIG_HOME'] ?? '${env['HOME']}/.config';
     return Directory('$root/easylauncher');
   }
 
@@ -121,7 +111,6 @@ class LinuxLauncherPlatform implements LauncherPlatform {
   @override
   Future<List<LaunchTarget>> getApps() async => LauncherSettings.decode(
     await File('${_configDirectory.path}/apps.json').readAsString(),
-    linux: true,
   ).favorites;
 
   @override
@@ -131,25 +120,16 @@ class LinuxLauncherPlatform implements LauncherPlatform {
   @override
   Future<void> saveSettings(String json) async {
     await _configDirectory.create(recursive: true);
-    final temporary = await _configDirectory.createTemp('.settings-');
-    try {
-      final file = File('${temporary.path}/settings.json');
-      await file.writeAsString(json, flush: true);
-      await file.rename(_settings.path);
-    } finally {
-      await temporary.delete(recursive: true);
-    }
+    final temporary = File('${_settings.path}.tmp');
+    await temporary.writeAsString(json, flush: true);
+    await temporary.rename(_settings.path);
   }
 
   @override
-  Future<void> launchApp(LaunchTarget app) async {
-    final command = app.command;
-    if (command == null) throw ArgumentError('Missing shell command.');
-    await _startProcess('/bin/sh', [
-      '-c',
-      command,
-    ], mode: ProcessStartMode.detached);
-  }
+  Future<void> launchApp(LaunchTarget app) => Process.start('/bin/sh', [
+    '-c',
+    app.command!,
+  ], mode: ProcessStartMode.detached);
 
   @override
   Future<void> openAction(LaunchAction action) async {}

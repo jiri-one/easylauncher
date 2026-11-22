@@ -75,7 +75,7 @@ class TvHomeScreen extends StatelessWidget {
                 Expanded(
                   child: ScrollConfiguration(
                     behavior: ScrollConfiguration.of(context)
-                        .copyWith(scrollbars: false, overscroll: false),
+                        .copyWith(scrollbars: false),
                     child: GridView.builder(
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
