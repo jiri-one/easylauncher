@@ -43,8 +43,10 @@ Create `easylauncher/apps.json` under `$XDG_CONFIG_HOME` (usually `~/.config`). 
 To start EasyLauncher with labwc, add this line to `~/.config/labwc/autostart`, using the absolute path to your build. Keep the entire `bundle` directory together.
 
 ```sh
-/path/to/easylauncher/build/linux/x64/release/bundle/easylauncher &
+GDK_BACKEND=x11 /path/to/easylauncher/build/linux/x64/release/bundle/easylauncher &
 ```
+
+On Wayland, Flutter 3.50's raster thread busy-loops on `wl_display.sync` (about 4,000 round trips per second and 2.8 W of extra power on the NAS). Through Xwayland, the raster thread idles.
 
 ## Building
 
