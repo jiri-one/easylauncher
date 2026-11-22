@@ -1,7 +1,7 @@
 name: easylauncher
 description: "A text-first Android home screen for e-ink phones."
 publish_to: 'none'
-version: 0.2.0+5
+version: 0.2.1+6
 
 environment:
   sdk: ^3.13.7
