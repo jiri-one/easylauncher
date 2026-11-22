@@ -45,7 +45,8 @@ class LaunchTarget {
   final String label;
   final String? command;
 
-  String get id => command ?? '$packageName/$activityName';
+  String get id =>
+      command == null ? '$packageName/$activityName' : '$label/$command';
 
   LaunchTarget renamed(String name) => LaunchTarget(
     packageName: packageName,
@@ -55,11 +56,8 @@ class LaunchTarget {
   );
 
   Map<String, dynamic> toJson() => {
-    if (command == null) ...{
-      'packageName': packageName,
-      'activityName': activityName,
-    } else
-      'command': command,
+    'packageName': packageName,
+    'activityName': activityName,
     'label': label,
   };
 }

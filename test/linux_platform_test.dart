@@ -38,25 +38,6 @@ void main() {
     await expectLater(platform.getApps(), throwsFormatException);
   });
 
-  test('saves and replaces settings with their commands', () async {
-    expect(await platform.loadSettings(), isNull);
-    final settings = LauncherSettings(
-      favorites: [
-        LaunchTarget.fromJson({'label': 'Kodi', 'command': 'kodi'}),
-      ],
-    );
-    await platform.saveSettings(settings.encode());
-    final saved = LauncherSettings.decode((await platform.loadSettings())!);
-    expect(saved.favorites.single.command, 'kodi');
-    final updated = settings.copyWith(columns: 3).encode();
-    await platform.saveSettings(updated);
-    expect(await platform.loadSettings(), updated);
-    expect(
-      await config.list().map((entry) => entry.uri.pathSegments.last).toList(),
-      ['settings.json'],
-    );
-  });
-
   test('runs the whole command in a shell', () async {
     final made = Directory('${config.path}/My Games');
     await platform.launchApp(

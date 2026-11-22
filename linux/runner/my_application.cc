@@ -26,14 +26,6 @@ static void my_application_activate(GApplication* application) {
   gtk_window_set_decorated(window, FALSE);
   gtk_window_fullscreen(window);
 
-  // If you want to use a header bar, uncomment the following lines.
-  // Header bars are commonly used in GNOME based desktop environments and
-  // allow additional widgets to be added to the title bar.
-  // See https://docs.gtk.org/gtk3/class.HeaderBar.html
-  // GtkHeaderBar* header_bar = GTK_HEADER_BAR(gtk_header_bar_new());
-  // gtk_widget_show(GTK_WIDGET(header_bar));
-  // gtk_header_bar_set_show_close_button(header_bar, TRUE);
-  // gtk_window_set_titlebar(window, GTK_WIDGET(header_bar));
 
   gtk_window_set_title(window, "easylauncher");
 

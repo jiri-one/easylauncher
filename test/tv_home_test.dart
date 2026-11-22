@@ -63,11 +63,41 @@ void main() {
       expect(color('Vypnout'), Colors.white);
       await press(LogicalKeyboardKey.arrowUp);
       expect(color('Kodi'), Colors.white);
+      await tester.pump(const Duration(seconds: 3));
       await tester.tap(find.text('Steam Link'), kind: PointerDeviceKind.mouse);
       expect(platform.calls, ['Restartovat', 'Steam Link']);
     },
     variant: linux,
   );
+
+  testWidgets('a held or repeated Enter starts an app only once', (
+    tester,
+  ) async {
+    final platform = await launch(tester);
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
+    for (var i = 0; i < 5; i++) {
+      await tester.sendKeyRepeatEvent(LogicalKeyboardKey.enter);
+    }
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
+    await tester.pump(const Duration(seconds: 2));
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    expect(platform.calls, ['Kodi']);
+    await tester.pump(const Duration(seconds: 3));
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    expect(platform.calls, ['Kodi', 'Kodi']);
+  }, variant: linux);
+
+  testWidgets('tiles keep their size on a 4K screen without output scaling', (
+    tester,
+  ) async {
+    await launch(tester);
+    final hd = tester.getRect(find.byType(TextButton).first);
+    tester.view.physicalSize = const Size(3840, 2160);
+    await tester.pumpAndSettle();
+    final uhd = tester.getRect(find.byType(TextButton).first);
+    expect(uhd.height, moreOrLessEquals(hd.height * 3));
+    expect(uhd.width, moreOrLessEquals(hd.width * 3));
+  }, variant: linux);
 
   testWidgets('an empty app list points to the configuration file', (
     tester,

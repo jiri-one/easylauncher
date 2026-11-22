@@ -99,11 +99,11 @@ class LinuxLauncherPlatform implements LauncherPlatform {
 
   static Directory _defaultDirectory() {
     final env = Platform.environment;
-    final root = env['XDG_CONFIG_HOME'] ?? '${env['HOME']}/.config';
-    return Directory('$root/easylauncher');
+    final xdg = env['XDG_CONFIG_HOME'] ?? '';
+    return Directory(
+      '${xdg.isEmpty ? '${env['HOME']}/.config' : xdg}/easylauncher',
+    );
   }
-
-  File get _settings => File('${_configDirectory.path}/settings.json');
 
   @override
   Stream<String> get events => const Stream.empty();
@@ -113,17 +113,12 @@ class LinuxLauncherPlatform implements LauncherPlatform {
     await File('${_configDirectory.path}/apps.json').readAsString(),
   ).favorites;
 
+  // Nothing on the TV home changes settings yet.
   @override
-  Future<String?> loadSettings() async =>
-      await _settings.exists() ? _settings.readAsString() : null;
+  Future<String?> loadSettings() async => null;
 
   @override
-  Future<void> saveSettings(String json) async {
-    await _configDirectory.create(recursive: true);
-    final temporary = File('${_settings.path}.tmp');
-    await temporary.writeAsString(json, flush: true);
-    await temporary.rename(_settings.path);
-  }
+  Future<void> saveSettings(String json) async {}
 
   @override
   Future<void> launchApp(LaunchTarget app) => Process.start('/bin/sh', [
