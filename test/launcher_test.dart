@@ -4,12 +4,13 @@ import 'package:clock/clock.dart';
 import 'package:easylauncher/main.dart';
 import 'package:easylauncher/src/controller.dart';
 import 'package:easylauncher/src/models.dart';
+import 'package:easylauncher/src/ui/home.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' show DateFormat;
 
 import 'support/fake_platform.dart';
 
@@ -79,6 +80,30 @@ void main() {
     expect(first.top, second.top);
     expect(first.right, lessThan(second.left));
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('a label shrinks rather than split a word that can fit', (
+    tester,
+  ) async {
+    Future<double?> size(double width) async {
+      await tester.pumpWidget(
+        Directionality(
+          textDirection: TextDirection.ltr,
+          child: Center(
+            child: SizedBox(
+              width: width,
+              height: 80,
+              child: const AdaptiveLabel(label: 'Fotoaparat', fontSize: 28),
+            ),
+          ),
+        ),
+      );
+      return tester.widget<Text>(find.text('Fotoaparat')).style!.fontSize;
+    }
+
+    expect(await size(150), 15);
+    // Too narrow even at 12, so it is split at the largest size that fits two lines.
+    expect(await size(100), 20);
   });
 
   testWidgets('dark mode turns the screens and the system bars black', (
@@ -155,6 +180,16 @@ void main() {
     await tester.tap(find.byTooltip('Zpět'));
     await tester.pumpAndSettle();
     expect(icon('favorite-test.favoritex1'), findsOneWidget);
+    final favoriteIcon = tester.getRect(icon('favorite-test.favoritex1'));
+    final favoriteLabel = tester.getRect(find.text('Favorite 1'));
+    expect(favoriteIcon.right, lessThan(favoriteLabel.left));
+    expect(favoriteIcon.center.dy, closeTo(favoriteLabel.center.dy, 1));
+    await controller.update(controller.settings.copyWith(columns: 3));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getRect(icon('favorite-test.favoritex1')).bottom,
+      lessThanOrEqualTo(tester.getRect(find.text('Favorite 1')).top),
+    );
 
     final requests = [...platform.iconRequests];
     expect(requests.toSet(), hasLength(requests.length));

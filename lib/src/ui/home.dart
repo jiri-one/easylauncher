@@ -107,11 +107,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   : LayoutBuilder(
                       builder: (context, constraints) {
                         final columns = controller.settings.columns;
+                        // Three columns leave no room for a label beside the icon.
+                        final iconBeside = showAppIcons && columns == 2;
                         final rows = (favorites.length / columns).ceil();
                         final textWidth = math.max(
                           1.0,
                           (constraints.maxWidth - (columns - 1) * 8) / columns -
-                              20,
+                              20 -
+                              (iconBeside ? appIconSize + 8 : 0),
                         );
                         final minimumHeight = favorites.fold<double>(
                           72,
@@ -123,7 +126,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   textWidth,
                                 ) +
                                 16 +
-                                (showAppIcons ? appIconSize : 0),
+                                (showAppIcons && !iconBeside ? appIconSize : 0),
                           ),
                         );
                         final height = math.max(
@@ -191,7 +194,11 @@ class _HomeScreenState extends State<HomeScreen> {
                                           vertical: 8,
                                         ),
                                         child: showAppIcons && installed != null
-                                            ? Column(
+                                            ? Flex(
+                                                direction: iconBeside
+                                                    ? Axis.horizontal
+                                                    : Axis.vertical,
+                                                spacing: iconBeside ? 8 : 0,
                                                 children: [
                                                   appIcon(
                                                     controller,
@@ -281,6 +288,22 @@ class AdaptiveLabel extends StatelessWidget {
       final minSize = maxLines > 2 ? 8.0 : 12.0;
       var size = fontSize;
       TextStyle style(double value) => _style(context, value);
+      double widestWord(double value) {
+        final words = TextPainter(
+          text: TextSpan(
+            text: label.replaceAll(' ', '\n'),
+            style: style(value),
+          ),
+          textDirection: direction,
+          textScaler: scaler,
+        )..layout();
+        final width = words.width;
+        words.dispose();
+        return width;
+      }
+
+      // A word too wide even at the smallest size is split anyway, so it may stay large.
+      final keepWords = widestWord(minSize) <= bounds.maxWidth;
       while (size > minSize) {
         final painter = TextPainter(
           text: TextSpan(text: label, style: style(size)),
@@ -290,7 +313,9 @@ class AdaptiveLabel extends StatelessWidget {
           maxLines: maxLines,
         )..layout(maxWidth: bounds.maxWidth);
         final fits =
-            !painter.didExceedMaxLines && painter.height <= bounds.maxHeight;
+            !painter.didExceedMaxLines &&
+            painter.height <= bounds.maxHeight &&
+            (!keepWords || widestWord(size) <= bounds.maxWidth);
         painter.dispose();
         if (fits) break;
         size = math.max(minSize, size - 0.5);
