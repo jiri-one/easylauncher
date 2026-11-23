@@ -2,12 +2,12 @@
 
 [English](README.md) | **Čeština**
 
-EasyLauncher je lehký launcher s textovými dlaždicemi a českým rozhraním,
-určený hlavně pro telefony s Androidem a černobílým displejem e-ink. Výchozí
-plocha na Androidu má velké dlaždice, černý text na bílém pozadí a přechody
-bez animací. Ikony aplikací a režim s čistě černým pozadím si můžeš zapnout
-v nastavení. Na Linuxu funguje i jako celoobrazovková plocha pro televizi,
-kterou ovládáš klávesnicí nebo dálkovým ovladačem.
+EasyLauncher je lehký spouštěč aplikací s textovými dlaždicemi a českým
+rozhraním, určený hlavně pro telefony s Androidem a černobílým displejem e-ink.
+Výchozí plocha na Androidu má velké dlaždice, černý text na bílém pozadí a
+přechody bez animací. Ikony aplikací a režim s čistě černým pozadím si můžeš
+zapnout v nastavení. Na Linuxu funguje i jako celoobrazovková plocha pro
+televizi, kterou ovládáš klávesnicí nebo dálkovým ovladačem.
 
 <p>
   <img src="docs/screenshots/android-home.png" width="250" alt="Výchozí plocha Androidu se dvěma sloupci textových dlaždic">
@@ -20,7 +20,7 @@ kterou ovládáš klávesnicí nebo dálkovým ovladačem.
 ### Ovládání plochy
 
 V nastavení EasyLauncheru otevři **Výchozí domovská obrazovka** a v Androidu
-vyber EasyLauncher jako výchozí launcher.
+vyber EasyLauncher jako výchozí aplikaci plochy.
 
 - Klepnutím na dlaždici spustíš oblíbenou aplikaci. Dlouhým podržením ji můžeš
   přejmenovat, odebrat z oblíbených, změnit její pořadí nebo otevřít informace
@@ -104,8 +104,8 @@ Televizní plocha se otevře na celé obrazovce s černým pozadím, hodinami,
 datem a oblíbenými aplikacemi ve třech sloupcích. Mřížka se přizpůsobí
 velikosti obrazovky. Dlaždici vybereš šipkami na klávesnici nebo ovladači,
 který posílá stejné klávesové události. Zvýrazněnou dlaždici spustíš Enterem.
-Najetím myší ji zvýrazníš, kliknutím spustíš. Mezi spuštěními launcher čeká
-tři sekundy.
+Najetím myší ji zvýrazníš, kliknutím spustíš. Mezi dvěma spuštěními musí
+uplynout tři sekundy.
 
 ### Nastavení oblíbených
 
@@ -134,7 +134,7 @@ nebo má prázdný seznam, plocha tě na něj odkáže.
 
 ### Sestavení a spuštění
 
-Pro sestavení na Linuxu si připrav nástroje pro Flutter desktop. Patří k nim
+Pro sestavení na Linuxu si připrav nástroje pro Flutter. Patří k nim
 Clang, CMake, Ninja, pkg-config a vývojové knihovny GTK 3. Postup najdeš
 v [návodu k nastavení Flutteru pro Linux](https://docs.flutter.dev/platform-integration/linux/setup).
 

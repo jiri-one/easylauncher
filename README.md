@@ -18,15 +18,15 @@ runs as a fullscreen TV home controlled with a keyboard or remote.
 
 ### Use the home screen
 
-To make EasyLauncher your home app, open **Výchozí domovská obrazovka**
-(Default home screen) in its settings and choose EasyLauncher in Android.
+To make EasyLauncher your home app, open **Default home screen** in its
+settings and choose EasyLauncher in Android.
 
 - Tap a favorite tile to open its app. Long-press a tile to rename it, remove
   it from favorites, change its order, or open its Android app info. When
-  renaming, Enter inserts a line break. Tap **Uložit** (Save) to save the name.
-- Swipe up or tap **Aplikace** (Apps) to open the alphabetical list of other
-  apps. Search ignores diacritics. Long-press an app and choose
-  **Přidat k oblíbeným** (Add to favorites) to pin it to the home screen.
+  renaming, Enter inserts a line break. Tap **Save** to save the name.
+- Swipe up or tap **Apps** to open the alphabetical list of other apps.
+  Search ignores diacritics. Long-press an app and choose **Add to favorites**
+  to pin it to the home screen.
 - Swipe down from the top of the app list or over its header to return home and
   close the keyboard. The system Home button also returns to the favorites.
 - Tap the clock for alarms or the date for the calendar. Swipe left for the
@@ -37,16 +37,16 @@ To make EasyLauncher your home app, open **Výchozí domovská obrazovka**
 The default home screen uses black text on white, with two columns of
 text-only tiles. Settings let you use three columns, change tile label size,
 and turn off automatic opening of the keyboard in the app list.
-**Tmavý režim** (Dark mode) uses a pure black background with white text.
-**Ikony aplikací** (App icons) is a separate switch for icons on the home
-screen and in the app list. Home tiles show icons beside the label in two
-columns and above it in three. The app list shows them beside the label.
+**Dark mode** uses a pure black background with white text. **App icons** is
+a separate switch for icons on the home screen and in the app list. Home
+tiles show icons beside the label in two columns and above it in three.
+The app list shows them beside the label.
 
-For the notification gesture, enable **Otevření oznámení** (Open notifications)
-in Android accessibility settings. The service only opens the notification
-shade and cannot read its contents or other windows. The release APK requests
-no internet, camera, contacts, or calendar permissions. The shortcuts open
-other apps through Android.
+For the notification gesture, enable **Open notifications** in Android
+accessibility settings. The service only opens the notification shade and
+cannot read its contents or other windows. The release APK requests no
+internet, camera, contacts, or calendar permissions. The shortcuts open other
+apps through Android.
 
 ### Build and install
 
