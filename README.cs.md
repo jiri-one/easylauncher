@@ -114,7 +114,8 @@ Vytvoř soubor `$XDG_CONFIG_HOME/easylauncher/apps.json`. Pokud je
 `~/.config/easylauncher/apps.json`. Nastav `schemaVersion` na `1` a do
 `favorites` zapiš dlaždice v pořadí, v jakém je chceš zobrazit. Každá položka
 potřebuje neprázdný název `label` a příkaz `command`. Příkazy se spouštějí
-přes `/bin/sh` a můžou mít argumenty. Volitelná položka `icon` zobrazí
+přes `/bin/sh` a můžou mít argumenty. Pokud se příkaz nenajde, při spuštění
+dlaždice se zobrazí chybová zpráva. Volitelná položka `icon` zobrazí
 místní obrázek nad názvem. Použij absolutní cestu k souboru PNG, JPEG nebo
 WebP. Když se obrázek nepodaří načíst, název zůstane vidět.
 

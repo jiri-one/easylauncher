@@ -131,14 +131,38 @@ class LinuxLauncherPlatform implements LauncherPlatform {
   @override
   Future<void> saveSettings(String json) async {}
 
+  // Assignments and expansions can change which executable the shell resolves.
+  static final _literalCommand = RegExp(
+    r'^[ \t]*(?![a-zA-Z_][a-zA-Z_0-9]*=)'
+    r'''(?:'([^']+)'|"([^"$`\\]+)"|([^ \t\r\n'"\\$`&|;<>()\[\]{}*?~#!]+))'''
+    r'(?=[ \t]|$)',
+  );
+
   // A detached start would leave a zombie per launch until the launcher exits.
   @override
-  Future<void> launchApp(LaunchTarget app) => Process.run('/bin/sh', [
-    '-c',
-    r'eval "$1" </dev/null >/dev/null 2>&1 &',
-    'sh',
-    app.command!,
-  ]);
+  Future<void> launchApp(LaunchTarget app) async {
+    final command = app.command!;
+    final match = _literalCommand.firstMatch(command);
+    final executable = match?.group(1) ?? match?.group(2) ?? match?.group(3);
+    final result = await Process.run('/bin/sh', [
+      '-c',
+      r'''
+[ -z "$2" ] || command -v -- "$2" >/dev/null 2>&1 || exit 127
+eval "$1" </dev/null >/dev/null 2>&1 &
+''',
+      'sh',
+      command,
+      executable ?? '',
+    ]);
+    if (result.exitCode != 0) {
+      throw ProcessException(
+        executable ?? command,
+        const [],
+        'Command could not be started',
+        result.exitCode,
+      );
+    }
+  }
 
   @override
   Future<void> openAction(LaunchAction action) async {}

@@ -107,7 +107,8 @@ Create `$XDG_CONFIG_HOME/easylauncher/apps.json`. If `XDG_CONFIG_HOME` is
 unset or empty, use `~/.config/easylauncher/apps.json`. Set `schemaVersion`
 to `1` and put the tiles in display order in `favorites`. Each entry needs a
 nonempty `label` and `command`. Commands run through `/bin/sh` and can
-include arguments. The optional `icon` is a local image above the label.
+include arguments. Opening a tile whose command cannot be found shows an
+error message. The optional `icon` is a local image above the label.
 Use an absolute path to a PNG, JPEG, or WebP file. If the image cannot load,
 the label stays visible.
 

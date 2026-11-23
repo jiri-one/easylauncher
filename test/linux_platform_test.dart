@@ -39,6 +39,21 @@ void main() {
     await expectLater(platform.getApps(), throwsFormatException);
   });
 
+  test('rejects a missing command before launching', () async {
+    for (final command in [
+      'easylauncher-missing-command',
+      '${config.path}/missing=command --option',
+      '"${config.path}/missing command" --option',
+    ]) {
+      await expectLater(
+        platform.launchApp(
+          LaunchTarget.fromJson({'label': 'Missing', 'command': command}),
+        ),
+        throwsA(isA<ProcessException>()),
+      );
+    }
+  });
+
   test('leaves no zombie process behind', () async {
     await platform.launchApp(
       LaunchTarget.fromJson({'label': 'Sleep', 'command': 'sleep 1'}),
@@ -60,16 +75,24 @@ void main() {
     expect(zombies, isEmpty);
   });
 
-  test('runs the whole command in a shell', () async {
-    final made = Directory('${config.path}/My Games');
-    await platform.launchApp(
-      LaunchTarget.fromJson({
-        'label': 'ScummVM',
-        'command': 'mkdir "${made.path}"',
-      }),
-    );
-    while (!await made.exists()) {
-      await Future<void>.delayed(const Duration(milliseconds: 10));
-    }
-  });
+  for (final (label, command) in [
+    ('a command name', 'mkdir'),
+    ('an absolute path', r"""'/bin/sh' -c 'mkdir "$1"' sh"""),
+    ('an environment assignment', 'EASYLAUNCHER_TEST=1 mkdir'),
+  ]) {
+    test('runs $label with arguments in a shell', () async {
+      final made = Directory('${config.path}/My Games');
+      final created = config
+          .watch(events: FileSystemEvent.create)
+          .firstWhere((event) => event.path == made.path);
+      await platform.launchApp(
+        LaunchTarget.fromJson({
+          'label': 'Create directory',
+          'command': '$command "${made.path}"',
+        }),
+      );
+      await created;
+      expect(await made.exists(), isTrue);
+    });
+  }
 }
