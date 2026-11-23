@@ -126,8 +126,8 @@ nebo má prázdný seznam, plocha tě na něj odkáže.
 ### Sestavení a spuštění
 
 Pro sestavení na Linuxu si připrav nástroje pro Flutter desktop. Patří k nim
-Clang, CMake, Ninja, pkg-config a vývojové knihovny GTK 3.
-[Návod k nastavení Flutteru pro Linux](https://docs.flutter.dev/platform-integration/linux/setup)
+Clang, CMake, Ninja, pkg-config a vývojové knihovny GTK 3. Postup najdeš
+v [návodu k nastavení Flutteru pro Linux](https://docs.flutter.dev/platform-integration/linux/setup).
 
 ```sh
 flutter build linux --release
@@ -148,8 +148,8 @@ Při nativním běhu na Waylandu pod labwc může vykreslovací vlákno Flutteru
 se zobrazovacím serverem za sekundu a spotřeba byla o 2,8 W vyšší než přes
 Xwayland, kde bylo vykreslovací vlákno v klidu. Aplikace spuštěné z televizní
 plochy zdědí `GDK_BACKEND=x11`. Proměnnou ponech, dokud oprava nebude
-součástí stabilního vydání Flutteru.
-[Chyba Flutteru #196529](https://github.com/flutter/flutter/issues/196529)
+součástí stabilního vydání Flutteru. Jde o
+[chybu Flutteru #196529](https://github.com/flutter/flutter/issues/196529).
 
 ## Testování
 
@@ -187,5 +187,5 @@ Verze 0.2.1 byla ověřena při následujícím použití.
 
 ## Licence
 
-EasyLauncher je dostupný pod licencí GNU General Public License v3.0.
-[LICENSE](LICENSE)
+EasyLauncher je dostupný pod licencí GNU General Public License v3.0. Plné
+znění je v souboru [LICENSE](LICENSE).

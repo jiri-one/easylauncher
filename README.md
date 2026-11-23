@@ -119,8 +119,8 @@ to the file if it is missing or invalid, or if the list is empty.
 ### Build and start
 
 Build on Linux with the Flutter desktop toolchain, including Clang, CMake,
-Ninja, pkg-config, and the GTK 3 development libraries.
-[Flutter Linux setup guide](https://docs.flutter.dev/platform-integration/linux/setup)
+Ninja, pkg-config, and the GTK 3 development libraries. See the
+[Flutter Linux setup guide](https://docs.flutter.dev/platform-integration/linux/setup).
 
 ```sh
 flutter build linux --release
@@ -140,8 +140,8 @@ On native Wayland under labwc, Flutter 3.50.1's raster thread can spin.
 A measurement showed about 4,000 round trips to the display server per
 second and 2.8 W more power use than with Xwayland, where the raster thread
 idled. Apps started from the TV home inherit `GDK_BACKEND=x11`. Keep the
-override until a stable Flutter release includes the fix.
-[Flutter issue #196529](https://github.com/flutter/flutter/issues/196529)
+override until a stable Flutter release includes the fix for
+[Flutter issue #196529](https://github.com/flutter/flutter/issues/196529).
 
 ## Testing
 
@@ -176,5 +176,5 @@ Version 0.2.1 was tested in these setups.
 
 ## License
 
-EasyLauncher is licensed under the GNU General Public License v3.0.
-[LICENSE](LICENSE)
+EasyLauncher is licensed under the GNU General Public License v3.0. See
+[LICENSE](LICENSE).
