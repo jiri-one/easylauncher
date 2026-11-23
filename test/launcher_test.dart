@@ -4,6 +4,7 @@ import 'package:clock/clock.dart';
 import 'package:easylauncher/main.dart';
 import 'package:easylauncher/src/controller.dart';
 import 'package:easylauncher/src/models.dart';
+import 'package:easylauncher/src/platform.dart';
 import 'package:easylauncher/src/ui/home.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
@@ -134,6 +135,43 @@ void main() {
     expect(bars.statusBarIconBrightness, Brightness.light);
     expect(bars.systemNavigationBarColor, Colors.black);
     expect(bars.systemNavigationBarIconBrightness, Brightness.light);
+  });
+
+  testWidgets('settings show the version reported by Android when available', (
+    tester,
+  ) async {
+    const channel = MethodChannel('one.jiri.easylauncher/platform');
+    const events = MethodChannel('one.jiri.easylauncher/events');
+    final messenger = tester.binding.defaultBinaryMessenger;
+    String? versionName = '7.8.9-debug';
+    messenger.setMockMethodCallHandler(
+      channel,
+      (call) async => switch (call.method) {
+        'getApps' => [],
+        'getStatus' => {'versionName': versionName},
+        _ => null,
+      },
+    );
+    messenger.setMockMethodCallHandler(events, (_) async => null);
+    addTearDown(() async {
+      await tester.pumpWidget(const SizedBox());
+      messenger.setMockMethodCallHandler(channel, null);
+      messenger.setMockMethodCallHandler(events, null);
+    });
+    final controller = LauncherController(platform: AndroidLauncherPlatform());
+    await tester.pumpWidget(EasyLauncherApp(controller: controller));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('open-settings')));
+    await tester.pumpAndSettle();
+
+    final version = find.text('EasyLauncher $versionName');
+    await tester.scrollUntilVisible(version, 200);
+    expect(version, findsOneWidget);
+
+    versionName = null;
+    await controller.refresh();
+    await tester.pumpAndSettle();
+    expect(find.text('EasyLauncher'), findsOneWidget);
   });
 
   testWidgets('swipe up over a tile opens search and omits favorites', (

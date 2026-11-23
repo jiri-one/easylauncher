@@ -31,6 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final settings = controller.settings;
     final editable = controller.settingsAvailable;
     final colors = Theme.of(context).colorScheme;
+    final versionName = controller.status.versionName;
     return Column(
       children: [
         AppBar(
@@ -182,11 +183,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 title: const Text('Obnovit seznam aplikací'),
                 onTap: () => widget.run(controller.refresh),
               ),
-              const Padding(
-                padding: EdgeInsets.all(20),
+              Padding(
+                padding: const EdgeInsets.all(20),
                 child: Text(
-                  'EasyLauncher 0.1.3',
-                  style: TextStyle(fontSize: 14),
+                  versionName == null
+                      ? 'EasyLauncher'
+                      : 'EasyLauncher $versionName',
+                  style: const TextStyle(fontSize: 14),
                 ),
               ),
             ],

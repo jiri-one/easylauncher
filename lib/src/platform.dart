@@ -8,9 +8,11 @@ class LauncherStatus {
   const LauncherStatus({
     this.isDefault = false,
     this.notificationsEnabled = false,
+    this.versionName,
   });
   final bool isDefault;
   final bool notificationsEnabled;
+  final String? versionName;
 }
 
 abstract class LauncherPlatform {
@@ -80,6 +82,7 @@ class AndroidLauncherPlatform implements LauncherPlatform {
     return LauncherStatus(
       isDefault: status?['isDefaultLauncher'] == true,
       notificationsEnabled: status?['isAccessibilityEnabled'] == true,
+      versionName: status?['versionName'] as String?,
     );
   }
 

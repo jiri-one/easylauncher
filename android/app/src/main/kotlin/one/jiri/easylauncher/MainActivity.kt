@@ -165,6 +165,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
                     mapOf(
                         "isDefaultLauncher" to isDefaultLauncher(),
                         "isAccessibilityEnabled" to NotificationAccessibilityService.isEnabled(this),
+                        "versionName" to installedVersionName(),
                     ),
                 )
                 else -> {
@@ -215,6 +216,13 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         } catch (_: RuntimeException) {
             result.error("PLATFORM_ERROR", "Akci se nepodařilo dokončit.", null)
         }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun installedVersionName(): String? = try {
+        packageManager.getPackageInfo(packageName, 0).versionName?.takeIf { it.isNotBlank() }
+    } catch (_: PackageManager.NameNotFoundException) {
+        null
     }
 
     private fun requiredString(call: MethodCall, key: String): String =
