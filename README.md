@@ -173,3 +173,8 @@ Version 0.2.1 was tested in these setups.
 - Daily home screen on Bigme HiBreak Pro BW (Android 14, system font scale 180%).
 - Installed for testing on Samsung Galaxy A35 (Android 16), not as the default home.
 - Linux TV home under labwc through Xwayland.
+
+## License
+
+EasyLauncher is licensed under the GNU General Public License v3.0.
+[LICENSE](LICENSE)

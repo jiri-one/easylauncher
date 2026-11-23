@@ -184,3 +184,8 @@ Verze 0.2.1 byla ověřena při následujícím použití.
 - Zkušební instalace na telefonu Samsung Galaxy A35 (Android 16) bez změny
   výchozí plochy.
 - Televizní plocha pro Linux pod labwc přes Xwayland.
+
+## Licence
+
+EasyLauncher je dostupný pod licencí GNU General Public License v3.0.
+[LICENSE](LICENSE)
