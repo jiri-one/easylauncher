@@ -2,85 +2,174 @@
 
 **English** | [Čeština](README.cs.md)
 
-A lightweight Android launcher designed primarily for phones with monochrome e-ink displays. Black text on a white background, large tiles without icons, and transitions without animations.
+EasyLauncher is a lightweight, text-first launcher with a Czech interface,
+made mainly for Android phones with monochrome e-ink displays. The default
+Android home uses large tiles, black text on white, and no animated
+transitions. App icons and a pure black theme are optional. On Linux it also
+runs as a fullscreen TV home controlled with a keyboard or remote.
 
-## Project status
+## Android
 
-Version **0.1.1 is the first public build**. The app has been tested on a physical **Bigme HiBreak Pro BW running Android 14**, including a system font scale of 180%.
+### Use the home screen
 
-Daily use is now beginning. Bug fixes and usability improvements will follow from that experience; additional features may be added later as real needs emerge. EasyLauncher will always remain lightweight and simple.
+To make EasyLauncher your home app, open **Výchozí domovská obrazovka**
+(Default home screen) in its settings and choose EasyLauncher in Android.
 
-## Controls
+- Tap a favorite tile to open its app. Long-press a tile to rename it, remove
+  it from favorites, change its order, or open its Android app info. When
+  renaming, Enter inserts a line break. Tap **Uložit** (Save) to save the name.
+- Swipe up or tap **Aplikace** (Apps) to open the alphabetical list of other
+  apps. Search ignores diacritics. Long-press an app and choose
+  **Přidat k oblíbeným** (Add to favorites) to pin it to the home screen.
+- Swipe down from the top of the app list or over its header to return home and
+  close the keyboard. The system Home button also returns to the favorites.
+- Tap the clock for alarms or the date for the calendar. Swipe left for the
+  camera or right for contacts. You can change all four targets in settings.
+- Swipe down on the home screen to open the Android notification shade. If the
+  favorites grid scrolls, start vertical gestures above it.
 
-- Tap the clock to open alarms, or the date to open your selected calendar.
-- Favorite apps use two columns by default. Long press a tile to rename, remove, or reorder it. When renaming, Enter inserts a line break; use **Uložit** (Save) to save the name.
-- Swipe up to open an alphabetical list of the remaining apps, with search that ignores diacritics. Swipe down at the top of the list or across its header to return to favorites and close the keyboard. Long press an app to add it to favorites.
-- Swipe from right to left to open the camera, from left to right to open contacts, and down on the home screen to open notifications. Gestures also work over tiles; the favorites grid can scroll when there are more favorites or longer names spanning multiple lines.
-- Settings let you change target apps, the number of columns, label size, and whether the keyboard opens automatically. The system Home button returns to the home screen and closes search and the keyboard.
-- You can enable a pure black dark mode and show app icons on the home screen and in the app list.
+The default home screen uses black text on white, with two columns of
+text-only tiles. Settings let you use three columns, change tile label size,
+and turn off automatic opening of the keyboard in the app list.
+**Tmavý režim** (Dark mode) uses a pure black background with white text.
+**Ikony aplikací** (App icons) is a separate switch for icons on the home
+screen and in the app list. Home tiles show icons beside the label in two
+columns and above it in three. The app list shows them beside the label.
 
-You can select EasyLauncher as your default home app from its settings. To use the notification gesture, enable its service in Android's accessibility settings. The service only opens the notification shade; it does not read its contents or the contents of other windows.
+For the notification gesture, enable **Otevření oznámení** (Open notifications)
+in Android accessibility settings. The service only opens the notification
+shade and cannot read its contents or other windows. The release APK requests
+no internet, camera, contacts, or calendar permissions. The shortcuts open
+other apps through Android.
 
-## Linux TV launcher
+### Build and install
 
-The Linux version opens fullscreen with a clock and a grid of favorites. Use the arrow keys on a keyboard or remote to move focus, then press Enter to launch a tile. A mouse click also works.
+Build and test from the project root with Flutter 3.50.1 (Dart 3.14.0).
+EasyLauncher requires Android 7.0 (API 24) or newer. To build the ARM64 APK,
+install the Android SDK, a JDK compatible with the Gradle wrapper, and Python 3.
+For installation with `adb`, connect your phone with USB debugging enabled.
 
 ```sh
-flutter build linux --release
+flutter pub get
+python3 tool/build_apk.py
+adb install -r build/app/outputs/flutter-apk/app-release.apk
 ```
 
-Create `easylauncher/apps.json` under `$XDG_CONFIG_HOME` (usually `~/.config`). The order in `favorites` is the tile order. Restart EasyLauncher after editing the file.
+The APK uses a development signing key. Configure your own signing key in
+the Android project for distribution. Pass `--debug` to the script to build
+a debug APK.
 
-Use the optional `icon` field to show a PNG, JPEG, or WebP image from an absolute path.
+### Seed a personal profile
+
+To start with a set of favorites and settings, build with a profile.
+
+```sh
+python3 tool/build_apk.py --profile private/launcher-profile.json
+```
+
+The profile supplies defaults when EasyLauncher has no saved settings.
+Updates use the settings already saved on the phone. Keep personal profiles
+in the ignored `private/` directory. The build embeds the profile in the APK,
+so omit `--profile` for public builds.
+
+The JSON file requires `schemaVersion` set to `1` and a `favorites` array in
+tile order. Each app entry has a `packageName`, a fully qualified
+`activityName`, and a `label`. Use an empty array to start without favorites.
+The other settings are optional.
+
+- `layout.favoriteColumns` is `2` or `3`. `layout.fontSize` is between `18`
+  and `36`.
+- `autoKeyboard`, `darkMode`, and `showAppIcons` take `true` or `false`.
+- `labels` maps a `packageName/activityName` to a custom display name.
+- `actions` accepts `clockTap`, `dateTap`, `swipeRight`, and `swipeLeft`.
+  Each action uses the same app fields, plus `"type": "launchApp"`.
+
+## Linux TV home
+
+The TV home opens fullscreen with a black background, a clock, date, and a
+three-column favorites grid that scales to fit the screen. Use the arrow
+keys on a keyboard or a remote that sends those keys. Press Enter to launch
+the highlighted tile. Moving the mouse over a tile highlights it and
+clicking opens it. The launcher waits three seconds before accepting
+another launch.
+
+### Configure favorites
+
+Create `$XDG_CONFIG_HOME/easylauncher/apps.json`. If `XDG_CONFIG_HOME` is
+unset or empty, use `~/.config/easylauncher/apps.json`. Set `schemaVersion`
+to `1` and put the tiles in display order in `favorites`. Each entry needs a
+nonempty `label` and `command`. Commands run through `/bin/sh` and can
+include arguments. The optional `icon` is a local image above the label.
+Use an absolute path to a PNG, JPEG, or WebP file. If the image cannot load,
+the label stays visible.
 
 ```json
 {
   "schemaVersion": 1,
   "favorites": [
-    {"label": "Kodi", "command": "kodi", "icon": "/home/you/.config/easylauncher/kodi.png"},
+    {"label": "Kodi", "command": "kodi", "icon": "/path/to/icons/kodi.png"},
     {"label": "ScummVM", "command": "scummvm"}
   ]
 }
 ```
 
-To start EasyLauncher with labwc, add this line to `~/.config/labwc/autostart`, using the absolute path to your build. Keep the entire `bundle` directory together.
+Restart EasyLauncher after editing the file. The home screen points you
+to the file if it is missing or invalid, or if the list is empty.
+
+### Build and start
+
+Build on Linux with the Flutter desktop toolchain, including Clang, CMake,
+Ninja, pkg-config, and the GTK 3 development libraries.
+[Flutter Linux setup guide](https://docs.flutter.dev/platform-integration/linux/setup)
 
 ```sh
-GDK_BACKEND=x11 /path/to/easylauncher/build/linux/x64/release/bundle/easylauncher &
+flutter build linux --release
 ```
 
-On Wayland, Flutter 3.50's raster thread busy-loops on `wl_display.sync` (about 4,000 round trips per second and 2.8 W of extra power on the NAS). Through Xwayland, the raster thread idles. This needs labwc with Xwayland installed, and the launched apps inherit the variable. It is Flutter issue [#196529](https://github.com/flutter/flutter/issues/196529); drop the variable once a Flutter release fixes it.
+Keep the whole `bundle` directory together and start its `easylauncher`
+executable. For labwc, install Xwayland and put this line in
+`~/.config/labwc/autostart` (or `$XDG_CONFIG_HOME/labwc/autostart` if you use a
+custom config directory). Use the absolute path to your build and the
+architecture directory that Flutter reports.
 
-## Building
+```sh
+GDK_BACKEND=x11 "/path/to/easylauncher/build/linux/x64/release/bundle/easylauncher" &
+```
 
-Builds use Flutter 3.50.1 with Dart 3.14.0, the Android SDK, and a JDK compatible with the bundled Gradle version. The minimum supported Android version is Android 7.0 (API 24).
+On native Wayland under labwc, Flutter 3.50.1's raster thread can spin.
+A measurement showed about 4,000 round trips to the display server per
+second and 2.8 W more power use than with Xwayland, where the raster thread
+idled. Apps started from the TV home inherit `GDK_BACKEND=x11`. Keep the
+override until a stable Flutter release includes the fix.
+[Flutter issue #196529](https://github.com/flutter/flutter/issues/196529)
+
+## Testing
+
+Run the full test suite on Linux. The process tests use `/bin/sh` and `/proc`.
 
 ```sh
 flutter pub get
 flutter analyze
 flutter test
-python3 tool/build_apk.py
 ```
 
-The ARM64 APK is written to `build/app/outputs/flutter-apk/app-release.apk`. Local builds use a development signing key; configure your own signing key in the Android project for distribution.
+The tests cover settings and search, Android gestures and navigation, the
+clock, dark mode, and app icons. They also check the Linux configuration,
+shell launches, and keyboard and mouse controls on the TV home.
 
-An optional personal profile is applied only on first launch. Subsequent updates preserve the settings saved on the phone.
-
-```sh
-python3 tool/build_apk.py --profile private/launcher-profile.json
-adb install -r build/app/outputs/flutter-apk/app-release.apk
-```
-
-The profile is JSON with `schemaVersion: 1`, a `favorites` array, and optional `layout`, `actions`, `labels`, and `autoKeyboard` fields. Each app has a `packageName`, a fully qualified `activityName`, and a `label`. Actions use the `launchApp` type; supported keys are `clockTap`, `dateTap`, `swipeRight`, and `swipeLeft`. An empty profile starts with no favorites.
-
-Keep personal profiles in the ignored `private/` directory. When used for a personal build, they become part of the APK; omit `--profile` when creating a public build.
-
-## Device testing
+Run the Android integration test on a connected device.
 
 ```sh
 flutter test integration_test/app_test.dart -d DEVICE_ID
 ```
 
-The integration test checks native app discovery, saved settings, safe rejection of a nonexistent app, and search. It uses a separate development build with the application ID `one.jiri.easylauncher.debug`, keeping its settings separate from the normally installed app. Display quality and e-ink refresh behavior need to be assessed on the physical screen.
+It checks native app discovery, reads back saved settings, checks that an
+unavailable app is rejected, and opens, searches, and dismisses the app list.
+The debug app has its own application ID and settings.
 
-The release APK does not request access to the internet, contacts, calendar events, or the camera. It opens the corresponding apps through Android system interfaces.
+Version 0.2.1 was tested in these setups.
+
+- Daily home screen on ONYX BOOX Palma (Android 11, app icons enabled).
+- Daily home screen on Bigme HiBreak Pro BW (Android 14, system font scale 180%).
+- Installed for testing on Samsung Galaxy A35 (Android 16), not as the default home.
+- Linux TV home under labwc through Xwayland.

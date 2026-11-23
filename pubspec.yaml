@@ -1,5 +1,5 @@
 name: easylauncher
-description: "A text-first Android home screen for e-ink phones."
+description: "A text-first Android launcher for monochrome e-ink phones that also provides a fullscreen TV home for Linux."
 publish_to: 'none'
 version: 0.2.1+6
 
