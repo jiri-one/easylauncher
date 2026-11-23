@@ -8,6 +8,12 @@ Android home uses large tiles, black text on white, and no animated
 transitions. App icons and a pure black theme are optional. On Linux it also
 runs as a fullscreen TV home controlled with a keyboard or remote.
 
+<p>
+  <img src="docs/screenshots/android-home.png" width="250" alt="Default Android home with two columns of text-only favorites">
+  <img src="docs/screenshots/android-home-icons.png" width="250" alt="Android home with app icons beside favorite labels">
+  <img src="docs/screenshots/android-home-dark.png" width="250" alt="Android home in dark mode">
+</p>
+
 ## Android
 
 ### Use the home screen
@@ -85,6 +91,8 @@ The other settings are optional.
   Each action uses the same app fields, plus `"type": "launchApp"`.
 
 ## Linux TV home
+
+![Linux TV home with the Music tile highlighted](docs/screenshots/linux-tv-home.png)
 
 The TV home opens fullscreen with a black background, a clock, date, and a
 three-column favorites grid that scales to fit the screen. Use the arrow

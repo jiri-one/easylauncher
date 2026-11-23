@@ -9,6 +9,12 @@ bez animací. Ikony aplikací a režim s čistě černým pozadím si můžeš z
 v nastavení. Na Linuxu funguje i jako celoobrazovková plocha pro televizi,
 kterou ovládáš klávesnicí nebo dálkovým ovladačem.
 
+<p>
+  <img src="docs/screenshots/android-home.png" width="250" alt="Výchozí plocha Androidu se dvěma sloupci textových dlaždic">
+  <img src="docs/screenshots/android-home-icons.png" width="250" alt="Plocha Androidu s ikonami vedle názvů aplikací">
+  <img src="docs/screenshots/android-home-dark.png" width="250" alt="Plocha Androidu v tmavém režimu">
+</p>
+
 ## Android
 
 ### Ovládání plochy
@@ -91,6 +97,8 @@ Ostatní nastavení jsou volitelná.
   `"type": "launchApp"`.
 
 ## Televizní plocha pro Linux
+
+![Televizní plocha pro Linux se zvýrazněnou dlaždicí Hudba](docs/screenshots/linux-tv-home.png)
 
 Televizní plocha se otevře na celé obrazovce s černým pozadím, hodinami,
 datem a oblíbenými aplikacemi ve třech sloupcích. Mřížka se přizpůsobí
