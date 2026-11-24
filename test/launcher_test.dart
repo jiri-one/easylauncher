@@ -6,6 +6,7 @@ import 'package:easylauncher/src/controller.dart';
 import 'package:easylauncher/src/models.dart';
 import 'package:easylauncher/src/platform.dart';
 import 'package:easylauncher/src/ui/home.dart';
+import 'package:flutter/gestures.dart' show kLongPressTimeout;
 import 'package:material_ui/material_ui.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -22,6 +23,7 @@ void main() {
     WidgetTester tester, {
     bool autoKeyboard = true,
     int extraApps = 0,
+    int favoriteCount = 12,
   }) async {
     tester.view.physicalSize = const Size(824, 1648);
     tester.view.devicePixelRatio = 2.1;
@@ -31,7 +33,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPadding);
     addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
-    final favorites = List.generate(12, (i) => app('Favorite ${i + 1}'));
+    final favorites = List.generate(
+      favoriteCount,
+      (i) => app('Favorite ${i + 1}'),
+    );
     final calendar = app('Kalendář');
     final platform = FakePlatform()
       ..apps = [
@@ -58,6 +63,17 @@ void main() {
       await platform.eventController.close();
     });
     return (controller, platform);
+  }
+
+  Finder favoriteTile(int number) =>
+      find.byKey(ValueKey('favorite-test.favoritex$number'));
+
+  Future<TestGesture> holdFavorite(WidgetTester tester, int number) async {
+    final gesture = await tester.startGesture(
+      tester.getCenter(favoriteTile(number)),
+    );
+    await tester.pump(kLongPressTimeout);
+    return gesture;
   }
 
   testWidgets('twelve tiles fit in two columns at phone size and 180% text', (
@@ -279,6 +295,252 @@ void main() {
     expect(platform.calls, isEmpty);
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets('dragging a favorite previews its order and saves on release', (
+    tester,
+  ) async {
+    final (controller, platform) = await launch(tester);
+    final favorites = controller.settings.favorites;
+    final saves = platform.saves.length;
+    final origin = tester.getCenter(favoriteTile(1));
+    final destination = tester.getCenter(favoriteTile(6));
+
+    final gesture = await holdFavorite(tester, 1);
+    await gesture.moveTo(destination);
+    await tester.pump();
+    expect(tester.getCenter(favoriteTile(1)), destination);
+    expect(tester.getCenter(favoriteTile(2)), origin);
+    expect(controller.settings.favorites, favorites);
+    expect(platform.saves, hasLength(saves));
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    final expected = [...favorites];
+    expected.insert(5, expected.removeAt(0));
+    expect(controller.settings.favorites, expected);
+    expect(platform.saves, hasLength(saves + 1));
+    expect(
+      LauncherSettings.decode(platform.saved!).favorites.map((app) => app.id),
+      expected.map((app) => app.id),
+    );
+    expect(tester.getCenter(favoriteTile(1)), destination);
+  });
+
+  testWidgets('a held tile inverts and opens its menu on release', (
+    tester,
+  ) async {
+    final (controller, platform) = await launch(tester);
+    await controller.update(controller.settings.copyWith(darkMode: true));
+    await tester.pumpAndSettle();
+    final saves = platform.saves.length;
+    final origin = tester.getCenter(favoriteTile(1));
+
+    final gesture = await holdFavorite(tester, 1);
+    await gesture.moveBy(const Offset(3, 2));
+    await tester.pump();
+    final tile = tester.widget<Material>(
+      find.ancestor(of: favoriteTile(1), matching: find.byType(Material)).first,
+    );
+    expect(tile.color, Colors.white);
+    expect((tile.shape! as RoundedRectangleBorder).side.color, Colors.black);
+    expect(
+      tester
+          .renderObject<RenderParagraph>(find.text('Favorite 1'))
+          .text
+          .style
+          ?.color,
+      Colors.black,
+    );
+    expect(tester.getCenter(favoriteTile(1)), origin);
+    expect(find.text('Přejmenovat'), findsNothing);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.text('Přejmenovat'), findsOneWidget);
+    expect(platform.saves, hasLength(saves));
+    expect(platform.calls, isEmpty);
+  });
+
+  testWidgets('moving a lifted tile does not trigger home swipes', (
+    tester,
+  ) async {
+    final (_, platform) = await launch(tester);
+    final across = tester.getCenter(favoriteTile(10));
+    final above = tester.getCenter(favoriteTile(2));
+    final gesture = await holdFavorite(tester, 9);
+    await gesture.moveTo(across);
+    await gesture.moveTo(above);
+    await tester.pump();
+    expect(tester.getCenter(favoriteTile(9)), above);
+    expect(find.byKey(const ValueKey('app-search')), findsNothing);
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(find.byKey(const ValueKey('app-search')), findsNothing);
+    expect(platform.calls, isEmpty);
+  });
+
+  testWidgets('dragging a tile away and back does not save or open a menu', (
+    tester,
+  ) async {
+    final (controller, platform) = await launch(tester);
+    final favorites = controller.settings.favorites;
+    final saves = platform.saves.length;
+    final origin = tester.getCenter(favoriteTile(1));
+    final destination = tester.getCenter(favoriteTile(5));
+
+    final gesture = await holdFavorite(tester, 1);
+    await gesture.moveTo(destination);
+    await tester.pump();
+    expect(tester.getCenter(favoriteTile(1)), destination);
+    await gesture.moveTo(origin);
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(tester.getCenter(favoriteTile(1)), origin);
+    expect(controller.settings.favorites, favorites);
+    expect(platform.saves, hasLength(saves));
+    expect(find.byType(BottomSheet), findsNothing);
+  });
+
+  testWidgets(
+    'a hold in a gap does nothing and an empty slot maps to the end',
+    (tester) async {
+      final (controller, platform) = await launch(tester, favoriteCount: 8);
+      await controller.update(controller.settings.copyWith(columns: 3));
+      await tester.pumpAndSettle();
+      final saves = platform.saves.length;
+      final first = tester.getRect(favoriteTile(1));
+      final second = tester.getRect(favoriteTile(2));
+      final gap = Offset((first.right + second.left) / 2, first.center.dy);
+      final gapHold = await tester.startGesture(gap);
+      await tester.pump(kLongPressTimeout);
+      await gapHold.up();
+      await tester.pumpAndSettle();
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(platform.saves, hasLength(saves));
+
+      final last = tester.getCenter(favoriteTile(8));
+      final empty = Offset(tester.getCenter(favoriteTile(3)).dx, last.dy);
+      final gesture = await holdFavorite(tester, 1);
+      await gesture.moveTo(empty);
+      await tester.pump();
+      expect(tester.getCenter(favoriteTile(1)), last);
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(controller.settings.favorites.last.label, 'Favorite 1');
+    },
+  );
+
+  testWidgets('dragging to the grid edges scrolls to off-screen slots', (
+    tester,
+  ) async {
+    final (controller, platform) = await launch(tester, favoriteCount: 24);
+    final favorites = controller.settings.favorites;
+    final saves = platform.saves.length;
+    final grid = find.byKey(const PageStorageKey('favorites'));
+    final viewport = tester.getRect(grid);
+    final scrollable = tester.state<ScrollableState>(
+      find.descendant(of: grid, matching: find.byType(Scrollable)),
+    );
+    final x = tester.getCenter(favoriteTile(2)).dx;
+    final bottom = Offset(x, viewport.bottom - 4);
+    expect(favoriteTile(24).hitTestable(), findsNothing);
+
+    final gesture = await holdFavorite(tester, 1);
+    await gesture.moveTo(bottom);
+    await tester.pump(const Duration(seconds: 2));
+    expect(scrollable.position.pixels, scrollable.position.maxScrollExtent);
+    expect(tester.getRect(favoriteTile(1)).bottom, closeTo(viewport.bottom, 1));
+
+    await gesture.moveTo(Offset(x, viewport.top + 4));
+    await tester.pump(const Duration(seconds: 2));
+    expect(scrollable.position.pixels, 0);
+
+    await gesture.moveTo(bottom);
+    await tester.pump(const Duration(seconds: 2));
+    expect(controller.settings.favorites, favorites);
+    expect(platform.saves, hasLength(saves));
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(controller.settings.favorites.last, favorites.first);
+    expect(platform.saves, hasLength(saves + 1));
+  });
+
+  testWidgets('cancelling a drag stops edge scrolling and discards the move', (
+    tester,
+  ) async {
+    final (controller, platform) = await launch(tester, favoriteCount: 24);
+    final favorites = controller.settings.favorites;
+    final saves = platform.saves.length;
+    final grid = find.byKey(const PageStorageKey('favorites'));
+    final position = tester
+        .state<ScrollableState>(
+          find.descendant(of: grid, matching: find.byType(Scrollable)),
+        )
+        .position;
+    final gesture = await holdFavorite(tester, 1);
+    await gesture.moveTo(
+      Offset(
+        tester.getCenter(favoriteTile(2)).dx,
+        tester.getRect(grid).bottom - 4,
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    final scrolled = position.pixels;
+    expect(scrolled, greaterThan(0));
+    expect(scrolled, lessThan(position.maxScrollExtent));
+
+    await gesture.cancel();
+    await tester.pump(const Duration(seconds: 2));
+    expect(position.pixels, scrolled);
+    expect(controller.settings.favorites, favorites);
+    expect(platform.saves, hasLength(saves));
+    expect(find.byType(BottomSheet), findsNothing);
+  });
+
+  testWidgets('a change to favorites cancels the current drag', (tester) async {
+    final (controller, platform) = await launch(tester);
+    final favorites = controller.settings.favorites;
+    final saves = platform.saves.length;
+    final destination = tester.getCenter(favoriteTile(6));
+    final gesture = await holdFavorite(tester, 1);
+    await gesture.moveTo(destination);
+    await tester.pump();
+    expect(tester.getCenter(favoriteTile(1)), destination);
+
+    await controller.removeFavorite(favorites.first);
+    await tester.pump();
+    expect(favoriteTile(1), findsNothing);
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(controller.settings.favorites, favorites.skip(1));
+    expect(platform.saves, hasLength(saves + 1));
+    expect(find.byType(BottomSheet), findsNothing);
+  });
+
+  testWidgets(
+    'a hold opens the menu immediately when settings are unavailable',
+    (tester) async {
+      final (controller, platform) = await launch(tester);
+      final favorites = controller.settings.favorites;
+      final saves = platform.saves.length;
+      platform.failLoad = true;
+      await controller.reloadSettings();
+      await tester.pumpAndSettle();
+      expect(controller.settingsAvailable, isFalse);
+
+      final origin = tester.getCenter(favoriteTile(1));
+      final destination = tester.getCenter(favoriteTile(2));
+      final gesture = await holdFavorite(tester, 1);
+      expect(find.text('Přejmenovat'), findsOneWidget);
+      await gesture.moveTo(destination);
+      await gesture.up();
+      await tester.pumpAndSettle();
+      expect(tester.getCenter(favoriteTile(1)), origin);
+      expect(controller.settings.favorites, favorites);
+      expect(platform.saves, hasLength(saves));
+    },
+  );
 
   testWidgets('favorite tiles expose tap and long press to accessibility', (
     tester,

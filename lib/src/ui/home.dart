@@ -2,12 +2,16 @@ import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:clock/clock.dart';
+import 'package:flutter/foundation.dart' show listEquals;
+import 'package:flutter/gestures.dart' show kTouchSlop;
 import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 
 import '../controller.dart';
 import '../models.dart';
 import 'apps.dart';
+
+const _tileSpacing = 8.0;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -110,11 +114,13 @@ class _HomeScreenState extends State<HomeScreen> {
                         // Three columns leave no room for a label beside the icon.
                         final iconBeside = showAppIcons && columns == 2;
                         final rows = (favorites.length / columns).ceil();
+                        final tileWidth =
+                            (constraints.maxWidth -
+                                (columns - 1) * _tileSpacing) /
+                            columns;
                         final textWidth = math.max(
                           1.0,
-                          (constraints.maxWidth - (columns - 1) * 8) / columns -
-                              20 -
-                              (iconBeside ? appIconSize + 8 : 0),
+                          tileWidth - 20 - (iconBeside ? appIconSize + 8 : 0),
                         );
                         final minimumHeight = favorites.fold<double>(
                           72,
@@ -131,88 +137,25 @@ class _HomeScreenState extends State<HomeScreen> {
                         );
                         final height = math.max(
                           minimumHeight,
-                          ((constraints.maxHeight - (rows - 1) * 8) / rows)
+                          ((constraints.maxHeight - (rows - 1) * _tileSpacing) /
+                                  rows)
                               .clamp(72.0, 108.0),
                         );
-                        final gridHeight = rows * height + (rows - 1) * 8;
+                        final gridHeight =
+                            rows * height + (rows - 1) * _tileSpacing;
                         final overflows =
                             gridHeight > constraints.maxHeight + 1;
                         return Align(
                           alignment: Alignment.bottomCenter,
                           child: SizedBox(
                             height: math.min(gridHeight, constraints.maxHeight),
-                            child: GridView.builder(
-                              key: const PageStorageKey('favorites'),
-                              padding: EdgeInsets.zero,
-                              physics: overflows
-                                  ? const ClampingScrollPhysics()
-                                  : const NeverScrollableScrollPhysics(),
-                              gridDelegate:
-                                  SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: columns,
-                                    crossAxisSpacing: 8,
-                                    mainAxisSpacing: 8,
-                                    mainAxisExtent: height,
-                                  ),
-                              itemCount: favorites.length,
-                              itemBuilder: (context, index) {
-                                final app = favorites[index];
-                                final installed = controller.resolve(app);
-                                final label = controller.label(app);
-                                final text = AdaptiveLabel(
-                                  label: label,
-                                  fontSize: controller.settings.fontSize,
-                                );
-                                return Semantics(
-                                  label: installed != null
-                                      ? label
-                                      : '$label, není nainstalovaná',
-                                  button: true,
-                                  excludeSemantics: true,
-                                  onTap: () => widget.onLaunch(app),
-                                  onLongPress: () => widget.onMenu(app),
-                                  child: Material(
-                                    shape: RoundedRectangleBorder(
-                                      side: BorderSide(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface,
-                                        width: installed != null ? 1.5 : 1,
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    child: InkWell(
-                                      key: ValueKey(
-                                        'favorite-${app.packageName}',
-                                      ),
-                                      onTap: () => widget.onLaunch(app),
-                                      onLongPress: () => widget.onMenu(app),
-                                      child: Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 10,
-                                          vertical: 8,
-                                        ),
-                                        child: showAppIcons && installed != null
-                                            ? Flex(
-                                                direction: iconBeside
-                                                    ? Axis.horizontal
-                                                    : Axis.vertical,
-                                                spacing: iconBeside ? 8 : 0,
-                                                children: [
-                                                  appIcon(
-                                                    controller,
-                                                    installed,
-                                                  ),
-                                                  Expanded(child: text),
-                                                ],
-                                              )
-                                            : text,
-                                      ),
-                                    ),
-                                  ),
-                                );
-                              },
+                            child: _FavoritesGrid(
+                              controller: controller,
+                              columns: columns,
+                              tileHeight: height,
+                              overflows: overflows,
+                              onLaunch: widget.onLaunch,
+                              onMenu: widget.onMenu,
                             ),
                           ),
                         );
@@ -246,6 +189,291 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class _FavoriteDrag {
+  _FavoriteDrag(this.favorites, this.from, this.pointer) : to = from;
+
+  final List<LaunchTarget> favorites;
+  final int from;
+  Offset pointer;
+  int to;
+  bool moved = false;
+}
+
+class _FavoritesGrid extends StatefulWidget {
+  const _FavoritesGrid({
+    required this.controller,
+    required this.columns,
+    required this.tileHeight,
+    required this.overflows,
+    required this.onLaunch,
+    required this.onMenu,
+  });
+
+  final LauncherController controller;
+  final int columns;
+  final double tileHeight;
+  final bool overflows;
+  final ValueChanged<LaunchTarget> onLaunch;
+  final ValueChanged<LaunchTarget> onMenu;
+
+  @override
+  State<_FavoritesGrid> createState() => _FavoritesGridState();
+}
+
+class _FavoritesGridState extends State<_FavoritesGrid> {
+  final _scroll = ScrollController();
+  _FavoriteDrag? _drag;
+  Timer? _edgeScroll;
+
+  RenderBox get _viewport => context.findRenderObject()! as RenderBox;
+  double get _rowStride => widget.tileHeight + _tileSpacing;
+
+  @override
+  void didUpdateWidget(covariant _FavoritesGrid oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      _clearDrag(oldWidget.controller);
+    }
+  }
+
+  @override
+  void dispose() {
+    _clearDrag(widget.controller);
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  int? _slotAt(Offset local, int count, {bool requireTile = false}) {
+    final size = _viewport.size;
+    if (count == 0 || requireTile && !(Offset.zero & size).contains(local)) {
+      return null;
+    }
+
+    final columns = widget.columns;
+    final tileWidth =
+        math.max(0.0, size.width - (columns - 1) * _tileSpacing) / columns;
+    final columnStride = tileWidth + _tileSpacing;
+    final x = local.dx;
+    final y = local.dy.clamp(0.0, size.height) + _scroll.offset;
+    final halfGap = requireTile ? 0.0 : _tileSpacing / 2;
+    final column = ((x + halfGap) / columnStride).floor().clamp(0, columns - 1);
+    final row = ((y + halfGap) / _rowStride).floor();
+    final index = row * columns + column;
+    if (requireTile) {
+      return index < count &&
+              x - column * columnStride < tileWidth &&
+              y - row * _rowStride < widget.tileHeight
+          ? index
+          : null;
+    }
+    final rows = (count / columns).ceil();
+    return y >= rows * _rowStride - _tileSpacing
+        ? count - 1
+        : math.min(index, count - 1);
+  }
+
+  void _startDrag(LongPressStartDetails details) {
+    final controller = widget.controller;
+    final favorites = controller.settings.favorites;
+    final local = _viewport.globalToLocal(details.globalPosition);
+    final index = _slotAt(local, favorites.length, requireTile: true);
+    if (index == null) return;
+    unawaited(Feedback.forLongPress(context));
+    if (!controller.settingsAvailable) {
+      widget.onMenu(favorites[index]);
+      return;
+    }
+
+    setState(
+      () => _drag = _FavoriteDrag(favorites, index, details.globalPosition),
+    );
+    controller.addListener(_checkDrag);
+  }
+
+  bool _canMove(_FavoriteDrag drag) =>
+      widget.controller.settingsAvailable &&
+      listEquals(drag.favorites, widget.controller.settings.favorites);
+
+  void _checkDrag() {
+    final drag = _drag;
+    if (drag != null && !_canMove(drag)) _cancelDrag();
+  }
+
+  void _moveDrag(LongPressMoveUpdateDetails details) {
+    _checkDrag();
+    final drag = _drag;
+    if (drag == null) return;
+    drag.pointer = details.globalPosition;
+    final local = _viewport.globalToLocal(drag.pointer);
+    _previewSlot(drag, local);
+
+    // A slight movement near an edge should still allow opening the menu.
+    if ((!drag.moved && details.offsetFromOrigin.distance < kTouchSlop) ||
+        _edgeOffset(local) == null) {
+      _stopEdgeScroll();
+      return;
+    }
+    _edgeScroll ??= Timer.periodic(
+      const Duration(milliseconds: 160),
+      _scrollAtEdge,
+    );
+  }
+
+  void _previewSlot(_FavoriteDrag drag, Offset local) {
+    final to = _slotAt(local, drag.favorites.length);
+    if (to == null || to == drag.to) return;
+    setState(() {
+      drag.to = to;
+      drag.moved = true;
+    });
+  }
+
+  double? _edgeOffset(Offset local) {
+    if (!widget.overflows || !_scroll.hasClients) return null;
+    final position = _scroll.position;
+    final height = position.viewportDimension;
+    final edge = math.min(32.0, height / 4);
+    if (local.dy >= edge && local.dy <= height - edge) return null;
+    final offset =
+        (position.pixels + (local.dy < edge ? -_rowStride : _rowStride)).clamp(
+          position.minScrollExtent,
+          position.maxScrollExtent,
+        );
+    return offset != position.pixels ? offset : null;
+  }
+
+  void _scrollAtEdge(Timer _) {
+    _checkDrag();
+    final drag = _drag;
+    if (drag == null) return;
+    final local = _viewport.globalToLocal(drag.pointer);
+    final offset = _edgeOffset(local);
+    if (offset == null) {
+      _stopEdgeScroll();
+      return;
+    }
+    _scroll.jumpTo(offset);
+    _previewSlot(drag, local);
+  }
+
+  void _stopEdgeScroll() {
+    _edgeScroll?.cancel();
+    _edgeScroll = null;
+  }
+
+  void _clearDrag(LauncherController controller) {
+    if (_drag == null) return;
+    _stopEdgeScroll();
+    _drag = null;
+    controller.removeListener(_checkDrag);
+  }
+
+  void _cancelDrag() {
+    if (_drag != null) setState(() => _clearDrag(widget.controller));
+  }
+
+  void _finishDrag() {
+    _checkDrag();
+    final drag = _drag;
+    if (drag == null) return;
+    _cancelDrag();
+    if (drag.from != drag.to) {
+      unawaited(widget.controller.moveFavorite(drag.from, drag.to));
+    } else if (!drag.moved) {
+      widget.onMenu(drag.favorites[drag.from]);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final drag = _drag;
+    final lifted = drag != null && _canMove(drag) ? drag : null;
+    var favorites = widget.controller.settings.favorites;
+    if (lifted != null && lifted.from != lifted.to) {
+      favorites = [...favorites];
+      favorites.insert(lifted.to, favorites.removeAt(lifted.from));
+    }
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      excludeFromSemantics: true,
+      onLongPressStart: _startDrag,
+      onLongPressMoveUpdate: _moveDrag,
+      onLongPressUp: _finishDrag,
+      onLongPressCancel: _cancelDrag,
+      child: GridView.builder(
+        key: const PageStorageKey('favorites'),
+        controller: _scroll,
+        padding: EdgeInsets.zero,
+        physics: widget.overflows
+            ? const ClampingScrollPhysics()
+            : const NeverScrollableScrollPhysics(),
+        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: widget.columns,
+          crossAxisSpacing: _tileSpacing,
+          mainAxisSpacing: _tileSpacing,
+          mainAxisExtent: widget.tileHeight,
+        ),
+        itemCount: favorites.length,
+        itemBuilder: (context, index) =>
+            _tile(context, favorites[index], lifted: index == lifted?.to),
+      ),
+    );
+  }
+
+  Widget _tile(BuildContext context, LaunchTarget app, {required bool lifted}) {
+    final controller = widget.controller;
+    final installed = controller.resolve(app);
+    final label = controller.label(app);
+    final text = AdaptiveLabel(
+      label: label,
+      fontSize: controller.settings.fontSize,
+    );
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    final foreground = lifted ? scheme.surface : scheme.onSurface;
+    final iconBeside = widget.columns == 2;
+    return Semantics(
+      label: installed != null ? label : '$label, není nainstalovaná',
+      button: true,
+      excludeSemantics: true,
+      onTap: () => widget.onLaunch(app),
+      onLongPress: () => widget.onMenu(app),
+      child: Material(
+        color: lifted ? scheme.onSurface : null,
+        textStyle: lifted
+            ? theme.textTheme.bodyMedium!.copyWith(color: foreground)
+            : null,
+        animationDuration: Duration.zero,
+        shape: RoundedRectangleBorder(
+          side: BorderSide(
+            color: foreground,
+            width: installed != null ? 1.5 : 1,
+          ),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: ValueKey('favorite-${app.packageName}'),
+          onTap: () => widget.onLaunch(app),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            child: controller.settings.showAppIcons && installed != null
+                ? Flex(
+                    direction: iconBeside ? Axis.horizontal : Axis.vertical,
+                    spacing: iconBeside ? 8 : 0,
+                    children: [
+                      appIcon(controller, installed),
+                      Expanded(child: text),
+                    ],
+                  )
+                : text,
+          ),
         ),
       ),
     );

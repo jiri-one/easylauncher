@@ -22,8 +22,9 @@ televizi, kterou ovládáš klávesnicí nebo dálkovým ovladačem.
 V nastavení EasyLauncheru otevři **Výchozí domovská obrazovka** a v Androidu
 vyber EasyLauncher jako výchozí aplikaci plochy.
 
-- Klepnutím na dlaždici spustíš oblíbenou aplikaci. Dlouhým podržením ji můžeš
-  přejmenovat, odebrat z oblíbených, změnit její pořadí nebo otevřít informace
+- Klepnutím na dlaždici spustíš oblíbenou aplikaci. Dlaždici přesuneš tak, že ji
+  podržíš a přetáhneš. Když ji pustíš bez přesunutí, otevře se nabídka pro
+  přejmenování, odebrání z oblíbených, změnu pořadí nebo zobrazení informací
   o aplikaci v Androidu. Při přejmenování vloží Enter nový řádek. Název uložíš
   tlačítkem **Uložit**.
 - Přejetím nahoru nebo klepnutím na **Aplikace** otevřeš abecední seznam

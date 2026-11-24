@@ -21,9 +21,10 @@ runs as a fullscreen TV home controlled with a keyboard or remote.
 To make EasyLauncher your home app, open **Default home screen** in its
 settings and choose EasyLauncher in Android.
 
-- Tap a favorite tile to open its app. Long-press a tile to rename it, remove
-  it from favorites, change its order, or open its Android app info. When
-  renaming, Enter inserts a line break. Tap **Save** to save the name.
+- Tap a favorite tile to open its app. Hold and drag the tile to move it.
+  Hold and release it in place to open the menu for renaming, removing it from
+  favorites, changing its order, or viewing Android app info. When renaming,
+  Enter inserts a line break. Tap **Save** to save the name.
 - Swipe up or tap **Apps** to open the alphabetical list of other apps.
   Search ignores diacritics. Long-press an app and choose **Add to favorites**
   to pin it to the home screen.
