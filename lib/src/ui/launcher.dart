@@ -183,12 +183,6 @@ class _LauncherState extends State<Launcher> {
                   title: const Text('Přejmenovat'),
                   onTap: () => Navigator.pop(context, 'rename'),
                 ),
-                if (favorite != null)
-                  ListTile(
-                    enabled: controller.settingsAvailable,
-                    title: const Text('Změnit pořadí'),
-                    onTap: () => Navigator.pop(context, 'order'),
-                  ),
                 ListTile(
                   title: const Text('Informace o aplikaci'),
                   onTap: () => Navigator.pop(context, 'details'),
@@ -211,8 +205,6 @@ class _LauncherState extends State<Launcher> {
         }
       case 'rename':
         await _rename(app);
-      case 'order':
-        _favorites();
       case 'details':
         await _run(() => controller.platform.openAppDetails(app.packageName));
     }

@@ -76,6 +76,13 @@ void main() {
     return gesture;
   }
 
+  Future<void> openFavoritesEditor(WidgetTester tester) async {
+    await tester.tap(find.byKey(const ValueKey('open-settings')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Oblíbené aplikace'));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets('twelve tiles fit in two columns at phone size and 180% text', (
     tester,
   ) async {
@@ -359,6 +366,19 @@ void main() {
     expect(find.text('Přejmenovat'), findsOneWidget);
     expect(platform.saves, hasLength(saves));
     expect(platform.calls, isEmpty);
+  });
+
+  testWidgets('the favorite tile menu offers remove, rename and app info', (
+    tester,
+  ) async {
+    await launch(tester);
+    await tester.longPress(favoriteTile(1));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Změnit pořadí'), findsNothing);
+    expect(find.text('Odebrat z oblíbených'), findsOneWidget);
+    expect(find.text('Přejmenovat'), findsOneWidget);
+    expect(find.text('Informace o aplikaci'), findsOneWidget);
   });
 
   testWidgets('moving a lifted tile does not trigger home swipes', (
@@ -776,6 +796,67 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('dragging a favorite by its handle saves the new order', (
+    tester,
+  ) async {
+    final (controller, platform) = await launch(tester, favoriteCount: 3);
+    final [first, second, third] = controller.settings.favorites;
+    final saves = platform.saves.length;
+    await openFavoritesEditor(tester);
+
+    final handles = find.byIcon(Icons.drag_handle);
+    expect(handles, findsNWidgets(3));
+    final size = tester.getSize(handles.first);
+    expect(size.width, greaterThanOrEqualTo(48));
+    expect(size.height, greaterThanOrEqualTo(48));
+    final origin = tester.getBottomLeft(handles.first) + const Offset(4, -4);
+    final gesture = await tester.startGesture(origin);
+    await gesture.moveTo(Offset(origin.dx, tester.getCenter(handles.last).dy));
+    await tester.pump();
+
+    final proxy = tester.widget<Material>(
+      find
+          .ancestor(
+            of: find.byKey(ValueKey(first.id)),
+            matching: find.byType(Material),
+          )
+          .first,
+    );
+    expect(proxy.elevation, 0);
+    expect(
+      proxy.shape,
+      const RoundedRectangleBorder(side: BorderSide(width: 1.5)),
+    );
+
+    await gesture.up();
+    await tester.pumpAndSettle();
+
+    final expected = [second, third, first];
+    expect(controller.settings.favorites, expected);
+    expect(platform.saves, hasLength(saves + 1));
+    expect(
+      LauncherSettings.decode(platform.saved!).favorites.map((app) => app.id),
+      expected.map((app) => app.id),
+    );
+  });
+
+  testWidgets('the favorites editor can remove the last favorite', (
+    tester,
+  ) async {
+    final (controller, platform) = await launch(tester, favoriteCount: 1);
+    await openFavoritesEditor(tester);
+    await tester.tap(find.byTooltip('Odebrat z oblíbených'));
+    await tester.pumpAndSettle();
+
+    expect(controller.settings.favorites, isEmpty);
+    expect(LauncherSettings.decode(platform.saved!).favorites, isEmpty);
+    expect(find.text('Favorite 1'), findsNothing);
+    expect(
+      find.text('Aplikaci přidáš dlouhým podržením v seznamu aplikací.'),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('Enter keeps rename open and an explicit line break persists', (
     tester,

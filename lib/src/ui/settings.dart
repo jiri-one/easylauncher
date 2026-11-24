@@ -222,43 +222,37 @@ class FavoritesEditor extends StatelessWidget {
               ),
             );
           }
-          return ListView.separated(
+          final colors = Theme.of(context).colorScheme;
+          return ReorderableListView.builder(
             itemCount: favorites.length,
-            separatorBuilder: (_, _) => const Divider(height: 1),
+            onReorderItem: controller.moveFavorite,
+            proxyDecorator: (child, _, _) => Material(
+              color: colors.surface,
+              shape: RoundedRectangleBorder(
+                side: BorderSide(color: colors.onSurface, width: 1.5),
+              ),
+              child: child,
+            ),
             itemBuilder: (context, index) {
               final app = favorites[index];
-              return Padding(
+              return ListTile(
                 key: ValueKey(app.id),
-                padding: const EdgeInsets.fromLTRB(20, 12, 12, 4),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('${index + 1}. ${controller.label(app)}'),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        IconButton(
-                          tooltip: 'Posunout nahoru',
-                          onPressed: index == 0
-                              ? null
-                              : () => controller.moveFavorite(index, index - 1),
-                          icon: const Icon(Icons.arrow_upward),
-                        ),
-                        IconButton(
-                          tooltip: 'Posunout dolů',
-                          onPressed: index == favorites.length - 1
-                              ? null
-                              : () => controller.moveFavorite(index, index + 1),
-                          icon: const Icon(Icons.arrow_downward),
-                        ),
-                        IconButton(
-                          tooltip: 'Odebrat z oblíbených',
-                          onPressed: () => controller.removeFavorite(app),
-                          icon: const Icon(Icons.remove_circle_outline),
-                        ),
-                      ],
+                leading: ReorderableDragStartListener(
+                  index: index,
+                  child: const SizedBox.square(
+                    dimension: 48,
+                    // Without a fill only the glyph itself would start a drag.
+                    child: ColoredBox(
+                      color: Colors.transparent,
+                      child: Icon(Icons.drag_handle),
                     ),
-                  ],
+                  ),
+                ),
+                title: Text(controller.label(app)),
+                trailing: IconButton(
+                  tooltip: 'Odebrat z oblíbených',
+                  onPressed: () => controller.removeFavorite(app),
+                  icon: const Icon(Icons.remove_circle_outline),
                 ),
               );
             },
