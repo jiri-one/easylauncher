@@ -76,6 +76,12 @@ void main() {
     return gesture;
   }
 
+  ScrollPosition scrollPosition(WidgetTester tester, Finder view) => tester
+      .state<ScrollableState>(
+        find.descendant(of: view, matching: find.byType(Scrollable)),
+      )
+      .position;
+
   Future<void> openFavoritesEditor(WidgetTester tester) async {
     await tester.tap(find.byKey(const ValueKey('open-settings')));
     await tester.pumpAndSettle();
@@ -363,41 +369,49 @@ void main() {
 
     await gesture.up();
     await tester.pumpAndSettle();
-    expect(find.text('Přejmenovat'), findsOneWidget);
-    expect(platform.saves, hasLength(saves));
-    expect(platform.calls, isEmpty);
-  });
-
-  testWidgets('the favorite tile menu offers remove, rename and app info', (
-    tester,
-  ) async {
-    await launch(tester);
-    await tester.longPress(favoriteTile(1));
-    await tester.pumpAndSettle();
-
-    expect(find.text('Změnit pořadí'), findsNothing);
     expect(find.text('Odebrat z oblíbených'), findsOneWidget);
     expect(find.text('Přejmenovat'), findsOneWidget);
     expect(find.text('Informace o aplikaci'), findsOneWidget);
+    expect(find.text('Změnit pořadí'), findsNothing);
+    expect(platform.saves, hasLength(saves));
+    expect(platform.calls, isEmpty);
   });
 
   testWidgets('moving a lifted tile does not trigger home swipes', (
     tester,
   ) async {
     final (_, platform) = await launch(tester);
-    final across = tester.getCenter(favoriteTile(10));
-    final above = tester.getCenter(favoriteTile(2));
-    final gesture = await holdFavorite(tester, 9);
-    await gesture.moveTo(across);
-    await gesture.moveTo(above);
-    await tester.pump();
-    expect(tester.getCenter(favoriteTile(9)), above);
-    expect(find.byKey(const ValueKey('app-search')), findsNothing);
-
-    await gesture.up();
-    await tester.pumpAndSettle();
+    final saves = platform.saves.length;
+    // Without the hold, these steps would open contacts and then the app list.
+    for (final step in const [Offset(70, 0), Offset(0, -70)]) {
+      final gesture = await holdFavorite(tester, 9);
+      for (var i = 0; i < 3; i++) {
+        await gesture.moveBy(step);
+        await tester.pump();
+      }
+      await gesture.up();
+      await tester.pumpAndSettle();
+    }
     expect(find.byKey(const ValueKey('app-search')), findsNothing);
     expect(platform.calls, isEmpty);
+    expect(platform.saves, hasLength(saves + 2));
+  });
+
+  testWidgets('a favorite renamed mid-drag drops the drag on release', (
+    tester,
+  ) async {
+    final (controller, platform) = await launch(tester);
+    final ids = controller.settings.favorites.map((app) => app.id).toList();
+    final gesture = await holdFavorite(tester, 3);
+    await gesture.moveTo(tester.getCenter(favoriteTile(6)));
+    await tester.pump();
+    await controller.rename(controller.settings.favorites.first, 'Renamed');
+    final saves = platform.saves.length;
+    await gesture.up();
+    await tester.pumpAndSettle();
+    expect(controller.settings.favorites.map((app) => app.id), ids);
+    expect(platform.saves, hasLength(saves));
+    expect(find.byType(BottomSheet), findsNothing);
   });
 
   testWidgets('dragging a tile away and back does not save or open a menu', (
@@ -423,7 +437,7 @@ void main() {
   });
 
   testWidgets(
-    'a hold in a gap does nothing and an empty slot maps to the end',
+    'a hold in a gap does nothing and drops past the last tile go last',
     (tester) async {
       final (controller, platform) = await launch(tester, favoriteCount: 8);
       await controller.update(controller.settings.copyWith(columns: 3));
@@ -432,9 +446,7 @@ void main() {
       final first = tester.getRect(favoriteTile(1));
       final second = tester.getRect(favoriteTile(2));
       final gap = Offset((first.right + second.left) / 2, first.center.dy);
-      final gapHold = await tester.startGesture(gap);
-      await tester.pump(kLongPressTimeout);
-      await gapHold.up();
+      await tester.longPressAt(gap);
       await tester.pumpAndSettle();
       expect(find.byType(BottomSheet), findsNothing);
       expect(platform.saves, hasLength(saves));
@@ -448,6 +460,17 @@ void main() {
       await gesture.up();
       await tester.pumpAndSettle();
       expect(controller.settings.favorites.last.label, 'Favorite 1');
+
+      final below = Offset(
+        tester.getCenter(favoriteTile(2)).dx,
+        tester.getRect(find.byKey(const PageStorageKey('favorites'))).bottom +
+            20,
+      );
+      final drag = await holdFavorite(tester, 2);
+      await drag.moveTo(below);
+      await drag.up();
+      await tester.pumpAndSettle();
+      expect(controller.settings.favorites.last.label, 'Favorite 2');
     },
   );
 
@@ -459,9 +482,7 @@ void main() {
     final saves = platform.saves.length;
     final grid = find.byKey(const PageStorageKey('favorites'));
     final viewport = tester.getRect(grid);
-    final scrollable = tester.state<ScrollableState>(
-      find.descendant(of: grid, matching: find.byType(Scrollable)),
-    );
+    final position = scrollPosition(tester, grid);
     final x = tester.getCenter(favoriteTile(2)).dx;
     final bottom = Offset(x, viewport.bottom - 4);
     expect(favoriteTile(24).hitTestable(), findsNothing);
@@ -469,12 +490,12 @@ void main() {
     final gesture = await holdFavorite(tester, 1);
     await gesture.moveTo(bottom);
     await tester.pump(const Duration(seconds: 2));
-    expect(scrollable.position.pixels, scrollable.position.maxScrollExtent);
+    expect(position.pixels, position.maxScrollExtent);
     expect(tester.getRect(favoriteTile(1)).bottom, closeTo(viewport.bottom, 1));
 
     await gesture.moveTo(Offset(x, viewport.top + 4));
     await tester.pump(const Duration(seconds: 2));
-    expect(scrollable.position.pixels, 0);
+    expect(position.pixels, 0);
 
     await gesture.moveTo(bottom);
     await tester.pump(const Duration(seconds: 2));
@@ -493,11 +514,7 @@ void main() {
     final favorites = controller.settings.favorites;
     final saves = platform.saves.length;
     final grid = find.byKey(const PageStorageKey('favorites'));
-    final position = tester
-        .state<ScrollableState>(
-          find.descendant(of: grid, matching: find.byType(Scrollable)),
-        )
-        .position;
+    final position = scrollPosition(tester, grid);
     final gesture = await holdFavorite(tester, 1);
     await gesture.moveTo(
       Offset(
@@ -523,13 +540,15 @@ void main() {
     final favorites = controller.settings.favorites;
     final saves = platform.saves.length;
     final destination = tester.getCenter(favoriteTile(6));
-    final gesture = await holdFavorite(tester, 1);
+    // The last tile, so a stale preview would index past the shorter list.
+    final gesture = await holdFavorite(tester, 12);
     await gesture.moveTo(destination);
     await tester.pump();
-    expect(tester.getCenter(favoriteTile(1)), destination);
+    expect(tester.getCenter(favoriteTile(12)), destination);
 
     await controller.removeFavorite(favorites.first);
     await tester.pump();
+    expect(tester.takeException(), isNull);
     expect(favoriteTile(1), findsNothing);
     await gesture.up();
     await tester.pumpAndSettle();

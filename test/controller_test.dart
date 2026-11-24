@@ -192,6 +192,19 @@ void main() {
     },
   );
 
+  test('aliases that migrate to one activity leave one favorite', () async {
+    final one = app('Dual', package: 'test.dual', activity: 'test.One');
+    final two = app('Dual', package: 'test.dual', activity: 'test.Two');
+    platform.apps = [one, two, calendar];
+    await controller.initialize();
+    await controller.update(
+      controller.settings.copyWith(favorites: [one, two]),
+    );
+    platform.apps = [two, calendar];
+    await controller.refresh();
+    expect(controller.settings.favorites.map((app) => app.id), [two.id]);
+  });
+
   test('uninstalled favorite is retained for later reinstallation', () async {
     await controller.initialize();
     platform.apps = [calendar];

@@ -222,14 +222,15 @@ class FavoritesEditor extends StatelessWidget {
               ),
             );
           }
-          final colors = Theme.of(context).colorScheme;
           return ReorderableListView.builder(
             itemCount: favorites.length,
             onReorderItem: controller.moveFavorite,
             proxyDecorator: (child, _, _) => Material(
-              color: colors.surface,
               shape: RoundedRectangleBorder(
-                side: BorderSide(color: colors.onSurface, width: 1.5),
+                side: BorderSide(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  width: 1.5,
+                ),
               ),
               child: child,
             ),

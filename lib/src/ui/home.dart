@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/gestures.dart' show kTouchSlop;
+import 'package:flutter/rendering.dart' show BoxHitTestResult, RenderMetaData;
 import 'package:material_ui/material_ui.dart';
 import 'package:intl/intl.dart';
 
@@ -12,6 +13,8 @@ import '../models.dart';
 import 'apps.dart';
 
 const _tileSpacing = 8.0;
+const _tilePadding = EdgeInsets.symmetric(horizontal: 10, vertical: 8);
+const _iconGap = 8.0;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({
@@ -120,7 +123,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             columns;
                         final textWidth = math.max(
                           1.0,
-                          tileWidth - 20 - (iconBeside ? appIconSize + 8 : 0),
+                          tileWidth -
+                              _tilePadding.horizontal -
+                              (iconBeside ? appIconSize + _iconGap : 0),
                         );
                         final minimumHeight = favorites.fold<double>(
                           72,
@@ -131,7 +136,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                   controller.label(app),
                                   textWidth,
                                 ) +
-                                16 +
+                                _tilePadding.vertical +
                                 (showAppIcons && !iconBeside ? appIconSize : 0),
                           ),
                         );
@@ -152,7 +157,9 @@ class _HomeScreenState extends State<HomeScreen> {
                             child: _FavoritesGrid(
                               controller: controller,
                               columns: columns,
+                              tileWidth: tileWidth,
                               tileHeight: height,
+                              iconBeside: iconBeside,
                               overflows: overflows,
                               onLaunch: widget.onLaunch,
                               onMenu: widget.onMenu,
@@ -209,7 +216,9 @@ class _FavoritesGrid extends StatefulWidget {
   const _FavoritesGrid({
     required this.controller,
     required this.columns,
+    required this.tileWidth,
     required this.tileHeight,
+    required this.iconBeside,
     required this.overflows,
     required this.onLaunch,
     required this.onMenu,
@@ -217,7 +226,9 @@ class _FavoritesGrid extends StatefulWidget {
 
   final LauncherController controller;
   final int columns;
+  final double tileWidth;
   final double tileHeight;
+  final bool iconBeside;
   final bool overflows;
   final ValueChanged<LaunchTarget> onLaunch;
   final ValueChanged<LaunchTarget> onMenu;
@@ -235,54 +246,37 @@ class _FavoritesGridState extends State<_FavoritesGrid> {
   double get _rowStride => widget.tileHeight + _tileSpacing;
 
   @override
-  void didUpdateWidget(covariant _FavoritesGrid oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != widget.controller) {
-      _clearDrag(oldWidget.controller);
-    }
-  }
-
-  @override
   void dispose() {
-    _clearDrag(widget.controller);
+    _stopEdgeScroll();
     _scroll.dispose();
     super.dispose();
   }
 
-  int? _slotAt(Offset local, int count, {bool requireTile = false}) {
-    final size = _viewport.size;
-    if (count == 0 || requireTile && !(Offset.zero & size).contains(local)) {
-      return null;
-    }
-
+  int _slotAt(Offset local, int count) {
     final columns = widget.columns;
-    final tileWidth =
-        math.max(0.0, size.width - (columns - 1) * _tileSpacing) / columns;
-    final columnStride = tileWidth + _tileSpacing;
-    final x = local.dx;
-    final y = local.dy.clamp(0.0, size.height) + _scroll.offset;
-    final halfGap = requireTile ? 0.0 : _tileSpacing / 2;
-    final column = ((x + halfGap) / columnStride).floor().clamp(0, columns - 1);
-    final row = ((y + halfGap) / _rowStride).floor();
-    final index = row * columns + column;
-    if (requireTile) {
-      return index < count &&
-              x - column * columnStride < tileWidth &&
-              y - row * _rowStride < widget.tileHeight
-          ? index
-          : null;
+    const halfGap = _tileSpacing / 2;
+    final height = _viewport.size.height;
+    // Anywhere below the grid means last, not the slot in the finger's column.
+    if (local.dy >= height && _scroll.position.extentAfter < 1) {
+      return count - 1;
     }
-    final rows = (count / columns).ceil();
-    return y >= rows * _rowStride - _tileSpacing
-        ? count - 1
-        : math.min(index, count - 1);
+    final y = local.dy.clamp(0.0, height) + _scroll.offset;
+    final column = ((local.dx + halfGap) / (widget.tileWidth + _tileSpacing))
+        .floor()
+        .clamp(0, columns - 1);
+    final row = ((y + halfGap) / _rowStride).floor();
+    return math.min(row * columns + column, count - 1);
   }
 
   void _startDrag(LongPressStartDetails details) {
     final controller = widget.controller;
     final favorites = controller.settings.favorites;
-    final local = _viewport.globalToLocal(details.globalPosition);
-    final index = _slotAt(local, favorites.length, requireTile: true);
+    final hit = BoxHitTestResult();
+    _viewport.hitTest(hit, position: details.localPosition);
+    final index = [
+      for (final entry in hit.path)
+        if (entry.target case RenderMetaData(:final int metaData)) metaData,
+    ].firstOrNull;
     if (index == null) return;
     unawaited(Feedback.forLongPress(context));
     if (!controller.settingsAvailable) {
@@ -291,43 +285,42 @@ class _FavoritesGridState extends State<_FavoritesGrid> {
     }
 
     setState(
-      () => _drag = _FavoriteDrag(favorites, index, details.globalPosition),
+      () => _drag = _FavoriteDrag(favorites, index, details.localPosition),
     );
-    controller.addListener(_checkDrag);
   }
 
   bool _canMove(_FavoriteDrag drag) =>
       widget.controller.settingsAvailable &&
       listEquals(drag.favorites, widget.controller.settings.favorites);
 
-  void _checkDrag() {
+  _FavoriteDrag? _liveDrag() {
     final drag = _drag;
     if (drag != null && !_canMove(drag)) _cancelDrag();
+    return _drag;
   }
 
   void _moveDrag(LongPressMoveUpdateDetails details) {
-    _checkDrag();
-    final drag = _drag;
+    final drag = _liveDrag();
     if (drag == null) return;
-    drag.pointer = details.globalPosition;
-    final local = _viewport.globalToLocal(drag.pointer);
-    _previewSlot(drag, local);
+    drag.pointer = details.localPosition;
+    _previewSlot(drag);
 
     // A slight movement near an edge should still allow opening the menu.
     if ((!drag.moved && details.offsetFromOrigin.distance < kTouchSlop) ||
-        _edgeOffset(local) == null) {
+        _edgeOffset(drag.pointer) == null) {
       _stopEdgeScroll();
       return;
     }
+    // Whole-row jumps redraw an e-ink screen once per row, not continuously.
     _edgeScroll ??= Timer.periodic(
       const Duration(milliseconds: 160),
       _scrollAtEdge,
     );
   }
 
-  void _previewSlot(_FavoriteDrag drag, Offset local) {
-    final to = _slotAt(local, drag.favorites.length);
-    if (to == null || to == drag.to) return;
+  void _previewSlot(_FavoriteDrag drag) {
+    final to = _slotAt(drag.pointer, drag.favorites.length);
+    if (to == drag.to) return;
     setState(() {
       drag.to = to;
       drag.moved = true;
@@ -335,7 +328,7 @@ class _FavoritesGridState extends State<_FavoritesGrid> {
   }
 
   double? _edgeOffset(Offset local) {
-    if (!widget.overflows || !_scroll.hasClients) return null;
+    if (!widget.overflows) return null;
     final position = _scroll.position;
     final height = position.viewportDimension;
     final edge = math.min(32.0, height / 4);
@@ -349,17 +342,15 @@ class _FavoritesGridState extends State<_FavoritesGrid> {
   }
 
   void _scrollAtEdge(Timer _) {
-    _checkDrag();
-    final drag = _drag;
+    final drag = _liveDrag();
     if (drag == null) return;
-    final local = _viewport.globalToLocal(drag.pointer);
-    final offset = _edgeOffset(local);
+    final offset = _edgeOffset(drag.pointer);
     if (offset == null) {
       _stopEdgeScroll();
       return;
     }
     _scroll.jumpTo(offset);
-    _previewSlot(drag, local);
+    _previewSlot(drag);
   }
 
   void _stopEdgeScroll() {
@@ -367,20 +358,14 @@ class _FavoritesGridState extends State<_FavoritesGrid> {
     _edgeScroll = null;
   }
 
-  void _clearDrag(LauncherController controller) {
+  void _cancelDrag() {
     if (_drag == null) return;
     _stopEdgeScroll();
-    _drag = null;
-    controller.removeListener(_checkDrag);
-  }
-
-  void _cancelDrag() {
-    if (_drag != null) setState(() => _clearDrag(widget.controller));
+    setState(() => _drag = null);
   }
 
   void _finishDrag() {
-    _checkDrag();
-    final drag = _drag;
+    final drag = _liveDrag();
     if (drag == null) return;
     _cancelDrag();
     if (drag.from != drag.to) {
@@ -394,9 +379,8 @@ class _FavoritesGridState extends State<_FavoritesGrid> {
   Widget build(BuildContext context) {
     final drag = _drag;
     final lifted = drag != null && _canMove(drag) ? drag : null;
-    var favorites = widget.controller.settings.favorites;
-    if (lifted != null && lifted.from != lifted.to) {
-      favorites = [...favorites];
+    final favorites = [...widget.controller.settings.favorites];
+    if (lifted != null) {
       favorites.insert(lifted.to, favorites.removeAt(lifted.from));
     }
     return GestureDetector(
@@ -420,8 +404,10 @@ class _FavoritesGridState extends State<_FavoritesGrid> {
           mainAxisExtent: widget.tileHeight,
         ),
         itemCount: favorites.length,
-        itemBuilder: (context, index) =>
-            _tile(context, favorites[index], lifted: index == lifted?.to),
+        itemBuilder: (context, index) => MetaData(
+          metaData: index,
+          child: _tile(context, favorites[index], lifted: index == lifted?.to),
+        ),
       ),
     );
   }
@@ -436,8 +422,9 @@ class _FavoritesGridState extends State<_FavoritesGrid> {
     );
     final theme = Theme.of(context);
     final scheme = theme.colorScheme;
-    final foreground = lifted ? scheme.surface : scheme.onSurface;
-    final iconBeside = widget.columns == 2;
+    final (background, foreground) = lifted
+        ? (scheme.onSurface, scheme.surface)
+        : (scheme.surface, scheme.onSurface);
     return Semantics(
       label: installed != null ? label : '$label, není nainstalovaná',
       button: true,
@@ -445,10 +432,8 @@ class _FavoritesGridState extends State<_FavoritesGrid> {
       onTap: () => widget.onLaunch(app),
       onLongPress: () => widget.onMenu(app),
       child: Material(
-        color: lifted ? scheme.onSurface : null,
-        textStyle: lifted
-            ? theme.textTheme.bodyMedium!.copyWith(color: foreground)
-            : null,
+        color: background,
+        textStyle: theme.textTheme.bodyMedium!.copyWith(color: foreground),
         animationDuration: Duration.zero,
         shape: RoundedRectangleBorder(
           side: BorderSide(
@@ -462,11 +447,13 @@ class _FavoritesGridState extends State<_FavoritesGrid> {
           key: ValueKey('favorite-${app.packageName}'),
           onTap: () => widget.onLaunch(app),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            padding: _tilePadding,
             child: controller.settings.showAppIcons && installed != null
                 ? Flex(
-                    direction: iconBeside ? Axis.horizontal : Axis.vertical,
-                    spacing: iconBeside ? 8 : 0,
+                    direction: widget.iconBeside
+                        ? Axis.horizontal
+                        : Axis.vertical,
+                    spacing: widget.iconBeside ? _iconGap : 0,
                     children: [
                       appIcon(controller, installed),
                       Expanded(child: text),
@@ -508,7 +495,9 @@ class AdaptiveLabel extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) => LayoutBuilder(
+  Widget build(BuildContext context) => _FitBuilder(
+    label: label,
+    fontSize: fontSize,
     builder: (context, bounds) {
       final scaler = MediaQuery.textScalerOf(context);
       final direction = Directionality.of(context);
@@ -559,6 +548,21 @@ class AdaptiveLabel extends StatelessWidget {
       );
     },
   );
+}
+
+// A drag rebuilds every tile; refitting only on new text, size or style keeps that cheap.
+class _FitBuilder extends LayoutBuilder {
+  const _FitBuilder({
+    required this.label,
+    required this.fontSize,
+    required super.builder,
+  });
+  final String label;
+  final double fontSize;
+
+  @override
+  bool updateShouldRebuild(_FitBuilder oldWidget) =>
+      label != oldWidget.label || fontSize != oldWidget.fontSize;
 }
 
 class ClockHeader extends StatefulWidget {

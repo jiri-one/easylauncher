@@ -110,7 +110,12 @@ class LauncherController extends ChangeNotifier {
       return installed.renamed(labels[installed.id] ?? target.label);
     }
 
-    final favorites = settings.favorites.map(migrate).toList();
+    final seen = <String>{};
+    // Two aliases of one package can migrate to the same activity.
+    final favorites = [
+      for (final favorite in settings.favorites.map(migrate))
+        if (seen.add(favorite.id)) favorite,
+    ];
     final actions = {
       for (final entry in settings.actions.entries)
         entry.key: migrate(entry.value),
