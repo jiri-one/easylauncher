@@ -39,6 +39,58 @@ void main() {
     messenger.setMockMethodCallHandler(channel, null);
   });
 
+  test('app discovery skips malformed Android rows individually', () async {
+    const channel = MethodChannel('one.jiri.easylauncher/platform');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    const first = {
+      'packageName': 'test.first',
+      'activityName': 'test.First',
+      'label': 'First',
+    };
+    const last = {
+      'packageName': 'test.last',
+      'activityName': 'test.Last',
+      'label': 'Last',
+    };
+    final invalidActivity = {...first, 'activityName': 'test.应用'};
+    messenger.setMockMethodCallHandler(
+      channel,
+      (_) async => [
+        first,
+        null,
+        'invalid',
+        {...first, 'packageName': 1},
+        {...first, 'label': null},
+        invalidActivity,
+        last,
+      ],
+    );
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+    final apps = await AndroidLauncherPlatform().getApps();
+    expect(apps.map((app) => app.toJson()), [first, last]);
+    expect(() => LaunchTarget.fromJson(invalidActivity), throwsFormatException);
+  });
+
+  test('blank Android labels fall back to the package name', () async {
+    const channel = MethodChannel('one.jiri.easylauncher/platform');
+    final messenger =
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
+    const row = {
+      'packageName': 'test.blank',
+      'activityName': '.Main',
+      'label': ' \u00a0\u202f\ufeff ',
+    };
+    messenger.setMockMethodCallHandler(channel, (_) async => [row]);
+    addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
+
+    final apps = await AndroidLauncherPlatform().getApps();
+    expect(apps.single.label, 'test.blank');
+    expect(apps.single.activityName, 'test.blank.Main');
+    expect(() => LaunchTarget.fromJson(row), throwsFormatException);
+  });
+
   test('HOME reaches both navigation and controller event consumers', () async {
     const channel = MethodChannel('one.jiri.easylauncher/events');
     final messenger =

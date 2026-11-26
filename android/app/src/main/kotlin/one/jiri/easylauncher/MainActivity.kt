@@ -237,7 +237,7 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
     private fun getApps(): List<Map<String, String>> =
         queryActivities(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER))
             .mapNotNull { it.activityInfo }
-            .filter { it.packageName != packageName && isAvailable(it) }
+            .filter { it.packageName != packageName && it.exported }
             .distinctBy { ComponentName(it.packageName, it.name) }
             .map {
                 mapOf(
@@ -369,20 +369,11 @@ class MainActivity : FlutterActivity(), EventChannel.StreamHandler {
         return resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME))?.packageName == packageName
     }
 
+    // The role dialog can be denied for good without showing anything, and it cannot switch back.
     private fun requestDefaultLauncher() {
-        if (isDefaultLauncher()) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            val roles = getSystemService(RoleManager::class.java)
-            if (roles?.isRoleAvailable(RoleManager.ROLE_HOME) == true) {
-                try {
-                    startActivityForResult(roles.createRequestRoleIntent(RoleManager.ROLE_HOME), 1)
-                    return
-                } catch (_: ActivityNotFoundException) {
-                } catch (_: SecurityException) {
-                }
-            }
+        if (!tryStartActivity(Intent(Settings.ACTION_HOME_SETTINGS))) {
+            openIntent(Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS))
         }
-        openIntent(Intent(Settings.ACTION_HOME_SETTINGS))
     }
 
     @Suppress("DEPRECATION")

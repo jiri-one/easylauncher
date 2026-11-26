@@ -46,8 +46,8 @@ class NotificationAccessibilityService : AccessibilityService() {
             val manager = context.getSystemService(AccessibilityManager::class.java) ?: return false
             val component = ComponentName(context, NotificationAccessibilityService::class.java)
             return manager.getEnabledAccessibilityServiceList(AccessibilityServiceInfo.FEEDBACK_ALL_MASK).any {
-                val info = it.resolveInfo.serviceInfo
-                ComponentName(info.packageName, info.name) == component
+                val info = it.resolveInfo?.serviceInfo
+                info != null && ComponentName(info.packageName, info.name) == component
             }
         }
     }

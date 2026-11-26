@@ -43,13 +43,25 @@ class AndroidLauncherPlatform implements LauncherPlatform {
 
   @override
   Future<List<LaunchTarget>> getApps() async {
-    final apps = await _methods.invokeListMethod<dynamic>('getApps') ?? [];
-    return apps
-        .map(
-          (entry) =>
-              LaunchTarget.fromJson(Map<String, dynamic>.from(entry as Map)),
-        )
-        .toList();
+    final rows = await _methods.invokeListMethod<Object?>('getApps') ?? [];
+    final apps = <LaunchTarget>[];
+    for (final row in rows) {
+      if (row is! Map) continue;
+      final package = row['packageName'];
+      final label = row['label'];
+      try {
+        apps.add(
+          LaunchTarget.fromJson({
+            'packageName': package,
+            'activityName': row['activityName'],
+            'label': label is String && label.trim().isEmpty ? package : label,
+          }),
+        );
+      } on FormatException {
+        continue;
+      }
+    }
+    return apps;
   }
 
   @override

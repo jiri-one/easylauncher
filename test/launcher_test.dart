@@ -166,6 +166,42 @@ void main() {
     expect(bars.systemNavigationBarIconBrightness, Brightness.light);
   });
 
+  for (final dark in [false, true]) {
+    testWidgets('settings controls have contrasting colors (dark=$dark)', (
+      tester,
+    ) async {
+      final (controller, _) = await launch(tester);
+      await controller.update(controller.settings.copyWith(darkMode: dark));
+      await tester.tap(find.byKey(const ValueKey('open-settings')));
+      await tester.pumpAndSettle();
+
+      final slider = find.byType(Slider);
+      await tester.scrollUntilVisible(
+        slider,
+        200,
+        scrollable: find.byType(Scrollable).last,
+      );
+      final theme = Theme.of(tester.element(slider));
+      final colors = theme.colorScheme;
+      final sliderTheme = theme.sliderTheme;
+      expect(
+        sliderTheme.inactiveTrackColor,
+        dark ? const Color(0xff555555) : const Color(0xffaaaaaa),
+      );
+      expect(sliderTheme.activeTickMarkColor, colors.onPrimary);
+      expect(sliderTheme.inactiveTickMarkColor, colors.primary);
+
+      final thumb = theme.switchTheme.thumbColor!;
+      for (final state in [
+        WidgetState.pressed,
+        WidgetState.focused,
+        WidgetState.hovered,
+      ]) {
+        expect(thumb.resolve({WidgetState.selected, state}), colors.onPrimary);
+      }
+    });
+  }
+
   testWidgets('settings show the version reported by Android when available', (
     tester,
   ) async {
@@ -733,12 +769,14 @@ void main() {
     expect(tester.testTextInput.isVisible, isFalse);
   });
 
-  testWidgets('pulling down the app list closes it and the keyboard', (
+  testWidgets('the app list dismisses without an overscroll effect', (
     tester,
   ) async {
     final (_, platform) = await launch(tester);
     await tester.tap(find.byKey(const ValueKey('open-apps')));
     await tester.pumpAndSettle();
+    expect(find.byType(StretchingOverscrollIndicator), findsNothing);
+    expect(find.byType(GlowingOverscrollIndicator), findsNothing);
     await tester.drag(find.text('Kalendář'), const Offset(0, 130));
     await tester.pumpAndSettle();
     expect(find.byKey(const ValueKey('clock')), findsOneWidget);
@@ -815,6 +853,20 @@ void main() {
       expect(tester.takeException(), isNull);
     },
   );
+
+  testWidgets('popping the favorites editor removes it on the next frame', (
+    tester,
+  ) async {
+    await launch(tester);
+    await openFavoritesEditor(tester);
+    final editor = find.text('Oblíbené', skipOffstage: false);
+    expect(editor, findsOneWidget);
+
+    await tester.tap(find.byType(BackButton));
+    await tester.pump();
+    expect(editor, findsNothing);
+    expect(find.text('Oblíbené aplikace'), findsOneWidget);
+  });
 
   testWidgets('dragging a favorite by its handle saves the new order', (
     tester,

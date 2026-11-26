@@ -67,6 +67,9 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
           localizationsDelegates: GlobalMaterialLocalizations.delegates,
           theme: theme,
           themeAnimationDuration: Duration.zero,
+          scrollBehavior: const MaterialScrollBehavior().copyWith(
+            overscroll: false,
+          ),
           builder: (context, child) => AnnotatedRegion<SystemUiOverlayStyle>(
             value: theme.appBarTheme.systemOverlayStyle!,
             child: child!,
@@ -99,6 +102,23 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
       highlightColor: Colors.transparent,
       hoverColor: Colors.transparent,
       dividerColor: foreground,
+      // Black-and-white e-ink modes turn this grey into the background, so the ticks still mark the range.
+      sliderTheme: SliderThemeData(
+        inactiveTrackColor: dark
+            ? const Color(0xff555555)
+            : const Color(0xffaaaaaa),
+        activeTickMarkColor: background,
+        inactiveTickMarkColor: foreground,
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) =>
+              states.contains(WidgetState.selected) &&
+                  !states.contains(WidgetState.disabled)
+              ? background
+              : null,
+        ),
+      ),
       // On black, dialogs and sheets would have no visible edge.
       dialogTheme: dark
           ? DialogThemeData(
@@ -159,6 +179,9 @@ class _EasyLauncherAppState extends State<EasyLauncherApp> {
 
 class _StillPageTransition extends PageTransitionsBuilder {
   const _StillPageTransition();
+
+  @override
+  Duration get transitionDuration => Duration.zero;
 
   @override
   Widget buildTransitions<T>(

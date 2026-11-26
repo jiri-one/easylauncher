@@ -16,8 +16,11 @@ LaunchTarget app(String name, {String? package, String? activity}) =>
 class FakePlatform implements LauncherPlatform {
   List<LaunchTarget> apps = [];
   String? saved;
+  bool failApps = false;
   bool failSave = false;
   bool failLoad = false;
+  bool failStatus = false;
+  LauncherStatus status = const LauncherStatus();
   bool notifications = true;
   Uint8List? icon;
   final calls = <String>[];
@@ -29,7 +32,10 @@ class FakePlatform implements LauncherPlatform {
   Stream<String> get events => eventController.stream;
 
   @override
-  Future<List<LaunchTarget>> getApps() async => apps;
+  Future<List<LaunchTarget>> getApps() async {
+    if (failApps) throw StateError('Scan failed');
+    return apps;
+  }
 
   @override
   Future<Uint8List?> getAppIcon(LaunchTarget app) async {
@@ -64,7 +70,10 @@ class FakePlatform implements LauncherPlatform {
   }
 
   @override
-  Future<LauncherStatus> getStatus() async => const LauncherStatus();
+  Future<LauncherStatus> getStatus() async {
+    if (failStatus) throw StateError('Status failed');
+    return status;
+  }
 
   @override
   Future<void> requestDefaultLauncher() async => calls.add('default');

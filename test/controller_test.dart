@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:easylauncher/src/controller.dart';
 import 'package:easylauncher/src/models.dart';
+import 'package:easylauncher/src/platform.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'support/fake_platform.dart';
@@ -159,6 +160,38 @@ void main() {
     );
   });
 
+  test('refresh publishes apps and retains status if reading status fails', () async {
+    const status = LauncherStatus(isDefault: true, notificationsEnabled: true);
+    platform.status = status;
+    await controller.initialize();
+    final snapshots = <List<LaunchTarget>>[];
+    controller.addListener(() => snapshots.add(controller.apps));
+
+    platform
+      ..apps = [phone]
+      ..failStatus = true;
+    await controller.refresh();
+
+    expect(snapshots, [[phone]]);
+    expect(controller.status, same(status));
+    expect(controller.error, isNull);
+  });
+
+  test('a successful scan clears the app-list error even if status fails', () async {
+    await controller.initialize();
+    final snapshot = controller.apps;
+    platform.failApps = true;
+    await controller.refresh();
+    expect(controller.apps, same(snapshot));
+    expect(controller.error, startsWith('Seznam aplikací se nepodařilo načíst.'));
+
+    platform
+      ..failApps = false
+      ..failStatus = true;
+    await controller.refresh();
+    expect(controller.error, isNull);
+  });
+
   test('equally named apps keep deterministic component order', () async {
     final second = app('Hodiny', package: 'test.second');
     final first = app('Hodiny', package: 'test.first');
@@ -217,17 +250,30 @@ void main() {
     await controller.initialize();
     platform.failSave = true;
     await controller.addFavorite(phone);
-    expect(controller.error, isNotNull);
+    final saveError = controller.error;
+    expect(saveError, startsWith('Změnu se nepodařilo uložit.'));
+    platform.failApps = true;
+    await controller.refresh();
+    expect(controller.error, saveError);
+    platform.failApps = false;
+    await controller.refresh();
+    expect(controller.error, saveError);
     platform.failSave = false;
     await controller.update(controller.settings.copyWith(columns: 3));
     expect(LauncherSettings.decode(platform.saved!).columns, 3);
   });
 
   test('corrupt saved settings are not overwritten during startup', () async {
-    platform.saved = '{bad json';
+    platform
+      ..saved = '{bad json'
+      ..failApps = true;
     await controller.initialize();
     expect(controller.ready, isTrue);
-    expect(controller.error, isNotNull);
+    final loadError = controller.error;
+    expect(loadError, startsWith('Nastavení se nepodařilo načíst.'));
+    platform.failApps = false;
+    await controller.refresh();
+    expect(controller.error, loadError);
     expect(platform.saved, '{bad json');
     expect(platform.saves, isEmpty);
   });

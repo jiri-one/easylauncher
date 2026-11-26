@@ -45,7 +45,7 @@ má černé pozadí a bílý text. Přepínač **Ikony aplikací** zapíná ikon
 ploše a v seznamu nezávisle na zvoleném režimu. Ve dvou sloupcích jsou ikony
 vedle názvu, ve třech nad ním. V seznamu jsou vedle názvu.
 
-Pro gesto oznámení povol službu **Otevření oznámení** v nastavení zpřístupnění
+Pro gesto oznámení povol službu **EasyLauncher** v nastavení zpřístupnění
 Androidu. Služba pouze otevírá panel oznámení a nemůže číst jeho obsah ani
 obsah jiných oken. Vydané APK nežádá o oprávnění k internetu, fotoaparátu,
 kontaktům ani kalendáři. Zkratky otevírají další aplikace přes Android.

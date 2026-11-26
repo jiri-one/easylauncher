@@ -43,7 +43,7 @@ a separate switch for icons on the home screen and in the app list. Home
 tiles show icons beside the label in two columns and above it in three.
 The app list shows them beside the label.
 
-For the notification gesture, enable **Open notifications** in Android
+For the notification gesture, enable **EasyLauncher** in Android
 accessibility settings. The service only opens the notification shade and
 cannot read its contents or other windows. The release APK requests no
 internet, camera, contacts, or calendar permissions. The shortcuts open other

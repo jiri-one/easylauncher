@@ -13,9 +13,11 @@ class LauncherController extends ChangeNotifier {
   LauncherSettings settings = LauncherSettings();
   List<LaunchTarget> apps = [];
   LauncherStatus status = const LauncherStatus();
-  String? error;
+  String? get error => _settingsError ?? _appListError;
   bool ready = false;
   bool settingsAvailable = false;
+  String? _settingsError;
+  String? _appListError;
   bool _disposed = false;
   Future<void> _saving = Future.value();
   StreamSubscription<String>? _events;
@@ -58,32 +60,40 @@ class LauncherController extends ChangeNotifier {
       if (_disposed) return;
       settings = loaded;
       settingsAvailable = true;
-      error = null;
+      _settingsError = null;
       final migrated = _reconcileAliases();
       if (saved == null || migrated) await _persist();
     } catch (_) {
       settingsAvailable = false;
-      error = 'Nastavení se nepodařilo načíst. Původní data zůstávají uložená. Zkus načtení znovu.';
+      _settingsError =
+          'Nastavení se nepodařilo načíst. Původní data zůstávají uložená. Zkus načtení znovu.';
     }
     _notify();
   }
 
   Future<void> refresh() async {
     final version = ++_refreshVersion;
+    final List<LaunchTarget> fetched;
     try {
-      final fetched = await platform.getApps();
-      final currentStatus = await platform.getStatus();
-      if (_disposed || version != _refreshVersion) return;
-      apps = List.unmodifiable(fetched);
-      status = currentStatus;
-      if (settingsAvailable && _reconcileAliases()) await _persist();
-      _notify();
+      fetched = await platform.getApps();
     } catch (_) {
       if (_disposed || version != _refreshVersion) return;
-      error =
+      _appListError =
           'Seznam aplikací se nepodařilo načíst. Zkus jej obnovit v nastavení.';
       _notify();
+      return;
     }
+    if (_disposed || version != _refreshVersion) return;
+    LauncherStatus? currentStatus;
+    try {
+      currentStatus = await platform.getStatus();
+    } catch (_) {}
+    if (_disposed || version != _refreshVersion) return;
+    apps = List.unmodifiable(fetched);
+    status = currentStatus ?? status;
+    _appListError = null;
+    if (settingsAvailable && _reconcileAliases()) await _persist();
+    _notify();
   }
 
   bool _reconcileAliases() {
@@ -219,7 +229,7 @@ class LauncherController extends ChangeNotifier {
       Object _,
     ) {
       if (_disposed) return;
-      error = 'Změnu se nepodařilo uložit. Zkus ji provést znovu.';
+      _settingsError = 'Změnu se nepodařilo uložit. Zkus ji provést znovu.';
       _notify();
     });
     return _saving;
@@ -303,7 +313,11 @@ class LauncherController extends ChangeNotifier {
 
   void dismissError() {
     if (!settingsAvailable) return;
-    error = null;
+    if (_settingsError != null) {
+      _settingsError = null;
+    } else {
+      _appListError = null;
+    }
     _notify();
   }
 
