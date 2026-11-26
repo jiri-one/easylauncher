@@ -1,7 +1,7 @@
 name: easylauncher
 description: "A text-first Android launcher for monochrome e-ink phones that also provides a fullscreen TV home for Linux."
 publish_to: 'none'
-version: 0.2.2+7
+version: 0.2.3+8
 
 environment:
   sdk: ^3.13.7
