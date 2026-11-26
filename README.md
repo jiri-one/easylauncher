@@ -154,11 +154,13 @@ override until a stable Flutter release includes the fix for
 [Flutter issue #196529](https://github.com/flutter/flutter/issues/196529).
 
 When you start labwc without a mouse, it still shows the pointer near the
-top-left corner, and apps cannot hide it. To hide it every time a window
-opens and keep it hidden until you move the mouse, put this rule in
-`~/.config/labwc/rc.xml` (or `$XDG_CONFIG_HOME/labwc/rc.xml` if you use a
-custom config directory). If the file already exists, add the `windowRule`
-to its `windowRules` section.
+top-left corner, and apps cannot hide it. With labwc 0.8.4 or newer, you can
+hide it every time a window opens, until you use the mouse again. Put this
+rule in `~/.config/labwc/rc.xml` (or `$XDG_CONFIG_HOME/labwc/rc.xml` if you
+use a custom config directory). If the file already exists, add the
+`windowRule` to its `windowRules` section. labwc reads only the first
+`rc.xml` it finds, so if you have none yet but your system provides
+`/etc/xdg/labwc/rc.xml`, start from a copy of that file.
 
 ```xml
 <?xml version="1.0"?>

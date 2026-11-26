@@ -65,8 +65,7 @@ class LauncherController extends ChangeNotifier {
       if (saved == null || migrated) await _persist();
     } catch (_) {
       settingsAvailable = false;
-      _settingsError =
-          'Nastavení se nepodařilo načíst. Původní data zůstávají uložená. Zkus načtení znovu.';
+      _settingsError = 'Nastavení se nepodařilo načíst. Původní data zůstávají uložená. Zkus načtení znovu.';
     }
     _notify();
   }

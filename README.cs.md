@@ -162,11 +162,13 @@ součástí stabilního vydání Flutteru. Jde o
 [chybu Flutteru #196529](https://github.com/flutter/flutter/issues/196529).
 
 Když spustíš labwc bez myši, u levého horního rohu se přesto zobrazí
-ukazatel a aplikace ho nemůžou skrýt. Aby ukazatel při otevření každého
-okna zmizel a znovu se objevil až při pohybu myší, vlož pravidlo do souboru
-`~/.config/labwc/rc.xml` (nebo `$XDG_CONFIG_HOME/labwc/rc.xml`, pokud
-používáš vlastní konfigurační složku). Pokud už soubor existuje, přidej
-`windowRule` do jeho sekce `windowRules`.
+ukazatel a aplikace ho nemůžou skrýt. V labwc 0.8.4 a novějším ho můžeš
+schovat při otevření každého okna, dokud znovu nepoužiješ myš. Vlož pravidlo
+do souboru `~/.config/labwc/rc.xml` (nebo `$XDG_CONFIG_HOME/labwc/rc.xml`,
+pokud používáš vlastní konfigurační složku). Pokud už soubor existuje,
+přidej `windowRule` do jeho sekce `windowRules`. Labwc čte jen první
+nalezený `rc.xml`, takže pokud vlastní ještě nemáš, ale systém má
+`/etc/xdg/labwc/rc.xml`, vyjdi z jeho kopie.
 
 ```xml
 <?xml version="1.0"?>

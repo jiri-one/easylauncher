@@ -31,7 +31,8 @@ class LaunchTarget {
         !RegExp(r'^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z0-9_]+)+$')
             .hasMatch(package) ||
         activity is! String ||
-        !RegExp(r'^\.?[a-zA-Z0-9_.$]+$').hasMatch(activity) ||
+        // Android accepts Unicode component names, and "/" would break the id.
+        !RegExp(r'^[^\s/\p{C}]+$', unicode: true).hasMatch(activity) ||
         label is! String ||
         label.trim().isEmpty) {
       throw const FormatException('Neplatný záznam aplikace.');

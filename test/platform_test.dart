@@ -53,7 +53,12 @@ void main() {
       'activityName': 'test.Last',
       'label': 'Last',
     };
-    final invalidActivity = {...first, 'activityName': 'test.应用'};
+    const unicode = {
+      'packageName': 'test.unicode',
+      'activityName': 'test.unicode.应用',
+      'label': 'Unicode',
+    };
+    final invalidActivity = {...first, 'activityName': 'test.Bad name'};
     messenger.setMockMethodCallHandler(
       channel,
       (_) async => [
@@ -63,13 +68,14 @@ void main() {
         {...first, 'packageName': 1},
         {...first, 'label': null},
         invalidActivity,
+        unicode,
         last,
       ],
     );
     addTearDown(() => messenger.setMockMethodCallHandler(channel, null));
 
     final apps = await AndroidLauncherPlatform().getApps();
-    expect(apps.map((app) => app.toJson()), [first, last]);
+    expect(apps.map((app) => app.toJson()), [first, unicode, last]);
     expect(() => LaunchTarget.fromJson(invalidActivity), throwsFormatException);
   });
 

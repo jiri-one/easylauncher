@@ -160,37 +160,51 @@ void main() {
     );
   });
 
-  test('refresh publishes apps and retains status if reading status fails', () async {
-    const status = LauncherStatus(isDefault: true, notificationsEnabled: true);
-    platform.status = status;
-    await controller.initialize();
-    final snapshots = <List<LaunchTarget>>[];
-    controller.addListener(() => snapshots.add(controller.apps));
+  test(
+    'refresh publishes apps and retains status if reading status fails',
+    () async {
+      const status = LauncherStatus(
+        isDefault: true,
+        notificationsEnabled: true,
+      );
+      platform.status = status;
+      await controller.initialize();
+      final snapshots = <List<LaunchTarget>>[];
+      controller.addListener(() => snapshots.add(controller.apps));
 
-    platform
-      ..apps = [phone]
-      ..failStatus = true;
-    await controller.refresh();
+      platform
+        ..apps = [phone]
+        ..failStatus = true;
+      await controller.refresh();
 
-    expect(snapshots, [[phone]]);
-    expect(controller.status, same(status));
-    expect(controller.error, isNull);
-  });
+      expect(snapshots, [
+        [phone],
+      ]);
+      expect(controller.status, same(status));
+      expect(controller.error, isNull);
+    },
+  );
 
-  test('a successful scan clears the app-list error even if status fails', () async {
-    await controller.initialize();
-    final snapshot = controller.apps;
-    platform.failApps = true;
-    await controller.refresh();
-    expect(controller.apps, same(snapshot));
-    expect(controller.error, startsWith('Seznam aplikací se nepodařilo načíst.'));
+  test(
+    'a successful scan clears the app-list error even if status fails',
+    () async {
+      await controller.initialize();
+      final snapshot = controller.apps;
+      platform.failApps = true;
+      await controller.refresh();
+      expect(controller.apps, same(snapshot));
+      expect(
+        controller.error,
+        startsWith('Seznam aplikací se nepodařilo načíst.'),
+      );
 
-    platform
-      ..failApps = false
-      ..failStatus = true;
-    await controller.refresh();
-    expect(controller.error, isNull);
-  });
+      platform
+        ..failApps = false
+        ..failStatus = true;
+      await controller.refresh();
+      expect(controller.error, isNull);
+    },
+  );
 
   test('equally named apps keep deterministic component order', () async {
     final second = app('Hodiny', package: 'test.second');
