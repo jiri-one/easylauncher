@@ -161,6 +161,24 @@ plochy zdědí `GDK_BACKEND=x11`. Proměnnou ponech, dokud oprava nebude
 součástí stabilního vydání Flutteru. Jde o
 [chybu Flutteru #196529](https://github.com/flutter/flutter/issues/196529).
 
+Když spustíš labwc bez myši, u levého horního rohu se přesto zobrazí
+ukazatel a aplikace ho nemůžou skrýt. Aby ukazatel při otevření každého
+okna zmizel a znovu se objevil až při pohybu myší, vlož pravidlo do souboru
+`~/.config/labwc/rc.xml` (nebo `$XDG_CONFIG_HOME/labwc/rc.xml`, pokud
+používáš vlastní konfigurační složku). Pokud už soubor existuje, přidej
+`windowRule` do jeho sekce `windowRules`.
+
+```xml
+<?xml version="1.0"?>
+<labwc_config>
+  <windowRules>
+    <windowRule identifier="*">
+      <action name="HideCursor"/>
+    </windowRule>
+  </windowRules>
+</labwc_config>
+```
+
 ## Testování
 
 Celou sadu testů spusť na Linuxu. Testy spouštění procesů používají

@@ -153,6 +153,24 @@ idled. Apps started from the TV home inherit `GDK_BACKEND=x11`. Keep the
 override until a stable Flutter release includes the fix for
 [Flutter issue #196529](https://github.com/flutter/flutter/issues/196529).
 
+When you start labwc without a mouse, it still shows the pointer near the
+top-left corner, and apps cannot hide it. To hide it every time a window
+opens and keep it hidden until you move the mouse, put this rule in
+`~/.config/labwc/rc.xml` (or `$XDG_CONFIG_HOME/labwc/rc.xml` if you use a
+custom config directory). If the file already exists, add the `windowRule`
+to its `windowRules` section.
+
+```xml
+<?xml version="1.0"?>
+<labwc_config>
+  <windowRules>
+    <windowRule identifier="*">
+      <action name="HideCursor"/>
+    </windowRule>
+  </windowRules>
+</labwc_config>
+```
+
 ## Testing
 
 Run the full test suite on Linux. The process tests use `/bin/sh` and `/proc`.
